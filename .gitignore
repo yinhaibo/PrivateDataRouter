@@ -4,6 +4,13 @@
 *.o
 *.obj
 
+#C++Builder file
+*.~*
+*.tds
+
+#Log file
+*.log
+
 # Compiled Dynamic libraries
 *.so
 *.dylib

@@ -1,0 +1,36 @@
+Functions called:
+ fflush (4 times)
+ delete (11 times)
+ free (7 times)
+ sprintf (4 times)
+ atof (2 times)
+ atoi (6 times)
+ strncpy (2 times)
+ strcat (3 times)
+ strcmp (1003 times)
+ snprintf (2006 times)
+ new (20 times)
+ memset (12 times)
+ strcpy (4 times)
+ delete[] (5 times)
+ new[] (15 times)
+ atol (1 times)
+ SysReallocMem (314 times)
+ SysFreeMem (45890 times)
+ SysGetMem (45918 times)
+ lstrlenA (1 times)
+ lstrcpynA (4 times)
+ calloc (1 times)
+ strlen (1080 times)
+ realloc (5 times)
+ strdup (1 times)
+ malloc (4 times)
+ memcpy (25 times)
+Resource types used:
+ object (20 allocs, 20 max)
+ object array (15 allocs, 14 max)
+ memory block (45929 allocs, 1188 max)
+Modules used:
+ 00400000 10/19/2014 00:21:18 C:\Documents and
+ Settings\Administrator\×ÀÃæ\Simulator\Simulator.exe
+==========================================

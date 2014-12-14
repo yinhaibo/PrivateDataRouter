@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="Master.exe"/>
+    <OBJFILES value="Master.obj UMain.obj UWorkThread.obj UComm.obj ..\comm\LogFileEx.obj 
+      ..\comm\UnitLogWriter.obj UMasterWorkThread.obj UMsg.obj UMsgQueue.obj 
+      UServerWorkThread.obj USerialWorkThread.obj"/>
+    <RESFILES value="Master.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) UMain.dfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="yb_base_c6.lib yb_comm_c6.lib rtl.lib vcl.lib"/>
+    <SPARELIBS value="vcl.lib rtl.lib yb_comm_c6.lib yb_base_c6.lib"/>
+    <PACKAGES value="vcl.bpi rtl.bpi dbrtl.bpi adortl.bpi vcldb.bpi vclx.bpi bdertl.bpi 
+      vcldbx.bpi ibxpress.bpi dsnap.bpi cds.bpi bdecds.bpi qrpt.bpi teeui.bpi 
+      teedb.bpi tee.bpi dss.bpi teeqr.bpi visualclx.bpi visualdbclx.bpi 
+      dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
+      inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
+      bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi"/>
+    <PATHCPP value=".;..\comm;..\comm"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value=""/>
+    <SYSDEFINES value="NO_STRICT"/>
+    <MAINSOURCE value="Master.cpp"/>
+    <INCLUDEPATH value="..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL"/>
+    <LIBPATH value="..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <IDLCFLAGS value="-I..\Simulator -I..\comm 
+      -I&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot; 
+      -ID:\Projects\IORouter\sourcecode\Master -I$(BCB)\include 
+      -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -boa"/>
+    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="Master.res" FORMNAME="" UNITNAME="Master.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="Master.cpp" FORMNAME="" UNITNAME="Master" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UMain.cpp" FORMNAME="FMain" UNITNAME="UMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UWorkThread.cpp" FORMNAME="" UNITNAME="UWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UComm.cpp" FORMNAME="" UNITNAME="UComm" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\comm\LogFileEx.cpp" FORMNAME="" UNITNAME="LogFileEx.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\comm\UnitLogWriter.cpp" FORMNAME="" UNITNAME="UnitLogWriter.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UMasterWorkThread.cpp" FORMNAME="" UNITNAME="UMasterWorkThread.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UMsg.cpp" FORMNAME="" UNITNAME="UMsg.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UMsgQueue.cpp" FORMNAME="" UNITNAME="UMsgQueue.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UServerWorkThread.cpp" FORMNAME="" UNITNAME="UServerWorkThread.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="USerialWorkThread.cpp" FORMNAME="" UNITNAME="USerialWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=1
+AutoIncBuild=1
+MajorVer=1
+MinorVer=0
+Release=1
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=1033
+CodePage=1252
+
+[Version Info Keys]
+CompanyName=
+FileDescription=
+FileVersion=1.0.1.0
+InternalName=
+LegalCopyright=
+LegalTrademarks=
+OriginalFilename=
+ProductName=
+ProductVersion=1.0.0.0
+Comments=
+
+[HistoryLists\hlIncludePath]
+Count=3
+Item0=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
+Item1=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
+Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=3
+Item0=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item1=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item2=C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=1
+Item0=_DEBUG
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=0
+LinkCGLIB=0
+
+[CORBA]
+AddServerUnit=1
+AddClientUnit=1
+PrecompiledHeaders=1
+
+[Language]
+ActiveLang=
+ProjectLang=
+RootDir=
+  </IDEOPTIONS>
+</PROJECT>
