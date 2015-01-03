@@ -28,9 +28,10 @@ protected:
     virtual int __fastcall sendData(unsigned char* pbuffer, int len);
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len);
 public:
-    __fastcall SerialWorkThread(const WorkParameter& param,
+    /*__fastcall SerialWorkThread(const WorkParameter& param,
         const message_t* preqMsg,
-        const message_t* prespMsg);
+        const message_t* prespMsg);*/
+    __fastcall SerialWorkThread(const device_config_t* pDevCfg);
 };
 //---------------------------------------------------------------------------
 #endif

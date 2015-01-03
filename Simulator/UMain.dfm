@@ -3641,24 +3641,6 @@ object FMain: TFMain
         OnClick = Exit1Click
       end
     end
-    object ErrorDistribution1: TMenuItem
-      Caption = 'Error Distribution'
-      object UniformDistribution1: TMenuItem
-        Caption = 'Uniform Distribution'
-        Checked = True
-        RadioItem = True
-        OnClick = UniformDistribution1Click
-      end
-      object PossionDistribution1: TMenuItem
-        Caption = 'Possion Distribution'
-        RadioItem = True
-        OnClick = PossionDistribution1Click
-      end
-      object NoError1: TMenuItem
-        Caption = 'No Error'
-        OnClick = NoError1Click
-      end
-    end
     object Help1: TMenuItem
       Caption = '&Help'
       object About1: TMenuItem

@@ -22,11 +22,8 @@
 //      }
 //---------------------------------------------------------------------------
 
-__fastcall SerialWorkThread::SerialWorkThread(
-    const WorkParameter& param,
-    const message_t* preqMsg,
-    const message_t* prespMsg)
-    : WorkThread(param, preqMsg, prespMsg)
+__fastcall SerialWorkThread::SerialWorkThread(const device_config_t* pDevCfg)
+    : WorkThread(pDevCfg)
 {
     receivePos = 0; //Rest receive position to zero
     initParameters();
@@ -95,7 +92,7 @@ void SerialWorkThread::initParameters()
     char parity;
     int databits;
     float stopbits;
-    GetSerialConfigFromStr(mParam.Configure, portidx, baud, parity, databits, stopbits);
+    GetSerialConfigFromStr(mpDevCfg->configure, portidx, baud, parity, databits, stopbits);
 
     if (mDevice == NULL){
         // Create Serial component

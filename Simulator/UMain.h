@@ -12,10 +12,15 @@
 #include <Menus.hpp>
 #include <Buttons.hpp>
 #include <ExtCtrls.hpp>
-#include <map>
 
+//Standard C++ Library
+#include <map>
+#include <list>
+
+#include "UIORouter.h"
 #include "USerialWorkThread.h"
 #include "UClientWorkThread.h"
+
 using namespace std;
 //-- message defines ---------------------------------------------------------
 #define WM_USER_OFFSET           0x100
@@ -33,6 +38,7 @@ typedef struct WorkItem{
     TBitBtn* button;
     WorkThread* thread;
 }WorkItem;
+
 //---------------------------------------------------------------------------
 class TFMain : public TForm
 {
@@ -63,11 +69,7 @@ __published:	// IDE-managed Components
     TMenuItem *BatchAdd1;
     TMenuItem *DeleteItem1;
     TCheckBox *chkAutoReconn;
-    TMenuItem *ErrorDistribution1;
-    TMenuItem *UniformDistribution1;
-    TMenuItem *PossionDistribution1;
     TBitBtn *btnResetCount;
-    TMenuItem *NoError1;
     TTrackBar *TrackBar1;
     void __fastcall About1Click(TObject *Sender);
     void __fastcall btnSaveClick(TObject *Sender);
@@ -87,23 +89,22 @@ __published:	// IDE-managed Components
     void __fastcall btnAddItemClick(TObject *Sender);
     void __fastcall btnBatchAddClick(TObject *Sender);
     void __fastcall chkAutoReconnClick(TObject *Sender);
-    void __fastcall UniformDistribution1Click(TObject *Sender);
-    void __fastcall PossionDistribution1Click(TObject *Sender);
     void __fastcall btnResetCountClick(TObject *Sender);
-    void __fastcall NoError1Click(TObject *Sender);
 private:	// User declarations
     bool configModified;
-    map<int, WorkItem> mWorkItems;
-    long seed;
-//    list<TBitBtn*> btnOperation;
-//    list<WorkThread*> vThreads;
+    map<int, WorkItem> mWorkItems; // Work item information, key is sequence
+                                   // Work item include operation buttion and threads
+    list<device_config_t*> lstDeviceConfig; // Device configure list
+    long seed;  // Random seed
+
     void __fastcall OperationButtonClick(TObject *Sender);
     WorkThread* __fastcall CreateWorkThread(int rowidx);
 
-    AnsiString mHeadHex;
-    AnsiString mTailHex;
-
-    void UpdateOperationUI();
+    void __fastcall CreateUI();
+    void __fastcall UpdateOperationUI();
+    void __fastcall UpdateUI();
+    void __fastcall ReInitAllDeviceConfigure();
+    
     // configure
     void ReloadConfigure();
     void SaveConfigure();
@@ -115,6 +116,7 @@ private:	// User declarations
     void SetAllThreadActive(bool active);
     // Edit item
     bool EditRow(int rowidx);
+
 
     // Callback function from work thread
     void __fastcall onOpenChannel(WorkThread* Sender, bool opened);

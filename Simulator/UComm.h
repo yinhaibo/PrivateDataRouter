@@ -4,12 +4,8 @@
 #define UCommH
 #include <system.hpp>
 
-// Work mode
-// Only support Serial port and tcp client mode
-enum WorkMode{
-    WORK_MODE_SERIAL,
-    WORK_MODE_TCP_CLIENT,
-};
+#include "UIORouter.h"
+
 
 WorkMode GetModeFromStr(AnsiString modeStr);
 AnsiString GetModeStr(WorkMode mode);

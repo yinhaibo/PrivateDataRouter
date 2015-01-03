@@ -10,11 +10,8 @@
 #pragma package(smart_init)
 
 
-__fastcall ClientWorkThread::ClientWorkThread(
-    const WorkParameter& param,
-    const message_t* preqMsg,
-    const message_t* prespMsg)
-    : WorkThread(param, preqMsg, prespMsg)
+__fastcall ClientWorkThread::ClientWorkThread(const device_config_t* pDevCfg)
+    : WorkThread(pDevCfg)
 {
     receivePos = 0; //Rest receive position to zero
     hasDataRead = false;
@@ -116,12 +113,12 @@ void ClientWorkThread::initParameters()
 {
     AnsiString ip;
     int port;
-    GetTCPClientConfigFromStr(mParam.Configure, ip, port);
+    GetTCPClientConfigFromStr(mpDevCfg->configure, ip, port);
 
     if (mClient == NULL){
         // Create Serial component
         mClient = new TClientSocket(NULL);
-        LogMsg("Init connect configure:" + mParam.Configure);
+        LogMsg("Init connect configure:" + mpDevCfg->configure);
     }
     mClient->Host = ip;
     mClient->Port = port;

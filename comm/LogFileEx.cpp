@@ -59,14 +59,16 @@ void LogFileEx::Log(LPCVOID lpBuffer, DWORD dwLength)
     assert(lpBuffer);
  
     char temp[50];
-    static const char format[3][20] = {"%Y", "%Y%m", "%Y%m%d"};
- 
+    const char format[3][20] = {"%4d", "%4d%02d", "%4d%02d%02d"};
+
     __try
     {
         Lock();
- 
-        time_t now = time(NULL);
-        strftime(temp, 9, format[_iType], localtime(&now));
+        SYSTEMTIME systm;
+        GetLocalTime(&systm);
+        //time_t now = time(NULL);
+        //strftime(temp, 9, format[_iType], localtime(&now));
+        snprintf(temp, 50, format[_iType], systm.wYear, systm.wMonth, systm.wDay);
  
         if(strcmp(_szLastDate, temp) != 0)//Change File name
         {

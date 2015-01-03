@@ -13,138 +13,47 @@ __fastcall TDeviceSetting::TDeviceSetting(TComponent* AOwner)
 	: TForm(AOwner)
 {
 }
+
 //---------------------------------------------------------------------
-
-
-void __fastcall TDeviceSetting::SetSeq(int value)
-{
-    if(FSeq != value) {
-        FSeq = value;
-    }
-}
-int __fastcall TDeviceSetting::GetSeq()
-{
-    return FSeq;
-}
-
-void __fastcall TDeviceSetting::SetAlias(AnsiString value)
-{
-    if(FAlias != value) {
-        FAlias = value;
-    }
-}
-AnsiString __fastcall TDeviceSetting::GetAlias()
-{
-    return FAlias;
-}
-
-void __fastcall TDeviceSetting::SetMode(WorkMode value)
-{
-    if(FMode != value) {
-        FMode = value;
-    }
-}
-WorkMode __fastcall TDeviceSetting::GetMode()
-{
-    return FMode;
-}
-
-void __fastcall TDeviceSetting::SetConfigure(AnsiString value)
-{
-    if(FConfigure != value) {
-        FConfigure = value;
-    }
-}
-AnsiString __fastcall TDeviceSetting::GetConfigure()
-{
-    return FConfigure;
-}
-
-void __fastcall TDeviceSetting::SetDelayFrom(int value)
-{
-    if(FDelayFrom != value) {
-        FDelayFrom = value;
-    }
-}
-int __fastcall TDeviceSetting::GetDelayFrom()
-{
-    return FDelayFrom;
-}
-
-void __fastcall TDeviceSetting::SetDelayTo(int value)
-{
-    if(FDelayTo != value) {
-        FDelayTo = value;
-    }
-}
-int __fastcall TDeviceSetting::GetDelayTo()
-{
-    return FDelayTo;
-}
-
-void __fastcall TDeviceSetting::SetErrorFrom(int value)
-{
-    if(FErrorFrom != value) {
-        FErrorFrom = value;
-    }
-}
-int __fastcall TDeviceSetting::GetErrorFrom()
-{
-    return FErrorFrom;
-}
-
-void __fastcall TDeviceSetting::SetErrorTo(int value)
-{
-    if(FErrorTo != value) {
-        FErrorTo = value;
-    }
-}
-int __fastcall TDeviceSetting::GetErrorTo()
-{
-    return FErrorTo;
-}
-
 // Update UI from variant
 void __fastcall TDeviceSetting::InvalidUI()
 {
-    txtSeq->Text = IntToStr(FSeq);
-    txtAlias->Text = FAlias;
-    cboMode->ItemIndex = (int)FMode;
-    txtConfigure->Text = FConfigure;
-    /*txtDelayFrom->Text = IntToStr(FDelayFrom);
-    txtDelayTo->Text = IntToStr(FDelayTo);
-    txtErrorFrom->Text = IntToStr(FErrorFrom);
-    txtErrorTo->Text = IntToStr(FErrorTo);*/
-    udDelayFrom->Position = FDelayFrom;
-    udDelayTo->Position = FDelayTo;
-    udErrorFrom->Position = FErrorFrom;
-    udErrorTo->Position = FErrorTo;
-    txtRequestMessage->Text = FRequestMsg;
-    txtResponseMessage->Text = FResponseMsg;
+    if (mpDevCfg == NULL) return;
+    txtSeq->Text = IntToStr(mpDevCfg->seq);
+    txtAlias->Text = mpDevCfg->alias;
+    cboMode->ItemIndex = (int)mpDevCfg->mode;
+    txtConfigure->Text = mpDevCfg->configure;
+    txtDelayFrom->Text = IntToStr(mpDevCfg->delayFrom);
+    txtDelayTo->Text = IntToStr(mpDevCfg->delayTo);
+    txtTag->Text = IntToStr(mpDevCfg->tag);
+    udDelayFrom->Position = mpDevCfg->delayFrom;
+    udDelayTo->Position = mpDevCfg->delayTo;
+    txtRequestMessage->Text = mpDevCfg->message;
+    txtResponseMessage->Text = mpDevCfg->eofMessage;
 }
 
 // Update data from UI to variant
 void __fastcall TDeviceSetting::UpdateFromUI()
 {
-    FSeq = StrToInt(txtSeq->Text);
-    FAlias = txtAlias->Text;
-    FMode = (WorkMode)cboMode->ItemIndex;
-    FConfigure = txtConfigure->Text;
-    /*FDelayFrom = StrToInt(txtDelayFrom->Text);
-    FDelayTo = StrToInt(txtDelayTo->Text);
-    FErrorFrom = StrToInt(txtErrorFrom->Text);
-    FErrorTo = StrToInt(txtErrorTo->Text);*/
-    FDelayFrom = udDelayFrom->Position;
-    FDelayTo = udDelayTo->Position;
-    FErrorFrom = udErrorFrom->Position;
-    FErrorTo = udErrorTo->Position;
-    FRequestMsg = txtRequestMessage->Text;
-    FResponseMsg = txtResponseMessage->Text;
+    if (mpDevCfg == NULL) return;
+    mpDevCfg->alias = txtAlias->Text;
+    mpDevCfg->mode = (WorkMode)cboMode->ItemIndex;
+    mpDevCfg->configure = txtConfigure->Text;
+    mpDevCfg->tag = StrToInt(txtTag->Text);
+    mpDevCfg->delayFrom = udDelayFrom->Position;
+    mpDevCfg->delayTo = udDelayTo->Position;
+    mpDevCfg->message = txtRequestMessage->Text;
+    mpDevCfg->eofMessage = txtResponseMessage->Text;
+}
+
+void __fastcall TDeviceSetting::BindConfig(device_config_t* pDevCfg)
+{
+    mpDevCfg = pDevCfg;
 }
 
 void __fastcall TDeviceSetting::btnSettingClick(TObject *Sender)
 {
-    if (FMode == WORK_MODE_SERIAL){
+    if (mpDevCfg->mode == WORK_MODE_SERIAL){
         TCommDev_Setting *setting = new TCommDev_Setting(this);
 
         int portidx;
@@ -175,7 +84,7 @@ void __fastcall TDeviceSetting::btnSettingClick(TObject *Sender)
         }
         setting->Close();
         delete setting;
-    }else if(FMode == WORK_MODE_TCP_CLIENT){
+    }else if(mpDevCfg->mode == WORK_MODE_TCP_CLIENT){
         TSocketSetting *setting = new TSocketSetting(this);
         AnsiString ip;
         int port;
@@ -238,70 +147,6 @@ BYTE __fastcall TDeviceSetting::transStopBits(float stopbits)
     }else{
         return 0;
     }
-}
-//---------------------------------------------------------------------------
-
-
-void __fastcall TDeviceSetting::SetRequestMsg(AnsiString value)
-{
-    if(FRequestMsg != value) {
-        FRequestMsg = value;
-    }
-}
-AnsiString __fastcall TDeviceSetting::GetRequestMsg()
-{
-    return FRequestMsg;
-}
-
-void __fastcall TDeviceSetting::SetResponseMsg(AnsiString value)
-{
-    if(FResponseMsg != value) {
-        FResponseMsg = value;
-    }
-}
-AnsiString __fastcall TDeviceSetting::GetResponseMsg()
-{
-    return FResponseMsg;
-}
-
-
-void __fastcall TDeviceSetting::SetErrorDistribution(distribution_t value)
-{
-    if (FDistribution != value){
-        FDistribution = value;
-        switch(FDistribution){
-        case UNIFORM_DISTRIBUTION:
-            rbUniform->Checked = true;
-            break;
-        case POISSON_DISTRIBUTION:
-            rbPoisson->Checked = true;
-            break;
-        case NO_ERROR_DISTRIBUTION:
-            rbNoError->Checked = true;
-            break;
-        }
-    }
-}
-distribution_t __fastcall TDeviceSetting::GetErrorDistribution()
-{
-    return FDistribution;
-}
-
-void __fastcall TDeviceSetting::rbUniformClick(TObject *Sender)
-{
-    FDistribution = UNIFORM_DISTRIBUTION;
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TDeviceSetting::rbPoissonClick(TObject *Sender)
-{
-    FDistribution = POISSON_DISTRIBUTION;
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TDeviceSetting::rbNoErrorClick(TObject *Sender)
-{
-    FDistribution = NO_ERROR_DISTRIBUTION;
 }
 //---------------------------------------------------------------------------
 

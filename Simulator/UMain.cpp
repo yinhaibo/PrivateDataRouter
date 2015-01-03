@@ -23,144 +23,115 @@ LogFileEx logger;
 //---------------------------------------------------------------------------
 #define COL_IDX_SEQ             0
 #define COL_IDX_ALIAS           1
-#define COL_IDX_MODE            2
-#define COL_IDX_CONFIG          3
-#define COL_IDX_DELAY_FROM      4
-#define COL_IDX_DELAY_TO        5
-#define COL_IDX_ERROR_FROM      6
-#define COL_IDX_ERROR_TO        7
-#define COL_IDX_RX              8
-#define COL_IDX_TX              9
-#define COL_IDX_ERROR          10
-#define COL_IDX_REQMSG         12
-#define COL_IDX_RESPMSG        13
-#define COL_IDX_OPERATION      11
-#define COL_IDX_ERROR_DISTRI   14
+#define COL_IDX_TAG             2
+#define COL_IDX_MODE            3
+#define COL_IDX_CONFIG          4
+#define COL_IDX_DELAY_FROM      5
+#define COL_IDX_DELAY_TO        6
+#define COL_IDX_RX              7
+#define COL_IDX_TX              8
+#define COL_IDX_ERROR           9
+#define COL_IDX_MESSAGE        10
+#define COL_IDX_EOFMSG         11
+#define COL_IDX_OPERATION      12
+#define COL_IDX_MAX            13
+
 __fastcall TFMain::TFMain(TComponent* Owner)
         : TForm(Owner)
 {
-
     configModified = false;
-    
-    gridDevices->ColCount = 15;
-    gridDevices->RowCount = 15;
+    // Create device UI
+    CreateUI();
 
-    gridDevices->Cells[COL_IDX_SEQ][0] = "Seq";
-    gridDevices->Cells[COL_IDX_ALIAS][0] = "Alias";
-    gridDevices->Cells[COL_IDX_MODE][0] = "Mode";
-    gridDevices->Cells[COL_IDX_CONFIG][0] = "Configure";
-    gridDevices->Cells[COL_IDX_DELAY_FROM][0] = "Delay from(ms)";
-    gridDevices->Cells[COL_IDX_DELAY_TO][0] = "Delay to(ms)";
-    gridDevices->Cells[COL_IDX_ERROR_FROM][0] = "Error from";
-    gridDevices->Cells[COL_IDX_ERROR_TO][0] = "Error to";
-    gridDevices->Cells[COL_IDX_RX][0] = "Rx(Msg)";
-    gridDevices->Cells[COL_IDX_TX][0] = "Tx(Msg)";
-    gridDevices->Cells[COL_IDX_OPERATION][0] = "Operation";
-    gridDevices->Cells[COL_IDX_ERROR][0] = "Err(Msg)";
-    gridDevices->Cells[COL_IDX_REQMSG][0] = "Request(Hex)";
-    gridDevices->Cells[COL_IDX_RESPMSG][0] = "Response(Hex)";
-    gridDevices->Cells[COL_IDX_ERROR_DISTRI][0] = "ErrorDistri";
-
-    gridDevices->ColWidths[COL_IDX_SEQ] = 30;
-    gridDevices->ColWidths[COL_IDX_ALIAS] = 30;
-    gridDevices->ColWidths[COL_IDX_MODE] = 60;
-    gridDevices->ColWidths[COL_IDX_CONFIG] = 100;
-    gridDevices->ColWidths[COL_IDX_ERROR_FROM] = 60;
-    gridDevices->ColWidths[COL_IDX_DELAY_TO] = 60;
-    gridDevices->ColWidths[COL_IDX_ERROR_FROM] = 50;
-    gridDevices->ColWidths[COL_IDX_ERROR_TO] = 50;
-    gridDevices->ColWidths[COL_IDX_RX] = 50;
-    gridDevices->ColWidths[COL_IDX_TX] = 50;
-    gridDevices->ColWidths[COL_IDX_OPERATION] = 80;
-    gridDevices->ColWidths[COL_IDX_ERROR] = 50;
-    gridDevices->ColWidths[COL_IDX_REQMSG] = 80;
-    gridDevices->ColWidths[COL_IDX_RESPMSG] = 80;
-
-    logger.Log("Load configure...");
+    logger.Log("Load simuator configure...");
     ReloadConfigure();
-    if (gridDevices->RowCount <= 1){
+
+    if (lstDeviceConfig.size() == 0){
         return;
     }
     
+    UpdateUI();
+    ReInitAllDeviceConfigure();
     UpdateOperationUI();
 
     logger.Log("Start " + this->Caption + ".....");
 }
+void __fastcall TFMain::CreateUI()
+{
+    gridDevices->ColCount = COL_IDX_MAX;
+    gridDevices->RowCount = 2;
+
+    gridDevices->Cells[COL_IDX_SEQ][0] = "Seq";
+    gridDevices->Cells[COL_IDX_ALIAS][0] = "Alias";
+    gridDevices->Cells[COL_IDX_TAG][0] = "Tag";
+    gridDevices->Cells[COL_IDX_MODE][0] = "Mode";
+    gridDevices->Cells[COL_IDX_CONFIG][0] = "Configure";
+    gridDevices->Cells[COL_IDX_DELAY_FROM][0] = "Delay from(ms)";
+    gridDevices->Cells[COL_IDX_DELAY_TO][0] = "Delay to(ms)";
+    gridDevices->Cells[COL_IDX_RX][0] = "Rx(Msg)";
+    gridDevices->Cells[COL_IDX_TX][0] = "Tx(Msg)";
+    gridDevices->Cells[COL_IDX_OPERATION][0] = "Operation";
+    gridDevices->Cells[COL_IDX_ERROR][0] = "Err(Msg)";
+    gridDevices->Cells[COL_IDX_MESSAGE][0] = "Message";
+    gridDevices->Cells[COL_IDX_EOFMSG][0] = "EOF Message";
+
+    gridDevices->ColWidths[COL_IDX_SEQ] = 30;
+    gridDevices->ColWidths[COL_IDX_ALIAS] = 30;
+    gridDevices->ColWidths[COL_IDX_TAG] = 30;
+    gridDevices->ColWidths[COL_IDX_MODE] = 60;
+    gridDevices->ColWidths[COL_IDX_CONFIG] = 100;
+    gridDevices->ColWidths[COL_IDX_DELAY_FROM] = 60;
+    gridDevices->ColWidths[COL_IDX_DELAY_TO] = 60;
+    gridDevices->ColWidths[COL_IDX_RX] = 50;
+    gridDevices->ColWidths[COL_IDX_TX] = 50;
+    gridDevices->ColWidths[COL_IDX_OPERATION] = 80;
+    gridDevices->ColWidths[COL_IDX_ERROR] = 50;
+    gridDevices->ColWidths[COL_IDX_MESSAGE] = 80;
+    gridDevices->ColWidths[COL_IDX_EOFMSG] = 80;
+}
+
 //---------------------------------------------------------------------------
 WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
 {
     message_t mReqMessage;
     message_t mRespMessage;
-    
-    String modeStr = gridDevices->Cells[COL_IDX_MODE][rowidx];
-    String config = gridDevices->Cells[COL_IDX_CONFIG][rowidx];
-    int delayFrom  = StrToInt(gridDevices->Cells[COL_IDX_DELAY_FROM][rowidx]);
-    int delayTo  = StrToInt(gridDevices->Cells[COL_IDX_DELAY_TO][rowidx]);
-    int errorFrom  = StrToInt(gridDevices->Cells[COL_IDX_ERROR_FROM][rowidx]);
-    int errorTo  = StrToInt(gridDevices->Cells[COL_IDX_ERROR_TO][rowidx]);
-    distribution_t distri = GetDistributionFromDesc(gridDevices->Cells[COL_IDX_ERROR_DISTRI][rowidx]);
 
-    //Head
-    mReqMessage.head = TextToUINT16(mHeadHex);
-    mReqMessage.clen = TextToStream(gridDevices->Cells[COL_IDX_REQMSG][rowidx],
-        mReqMessage.content, MAX_MESSAGE_LEN);
-    //Len
-    mReqMessage.len = mReqMessage.clen + MESSAGE_LEN_EXCEPT_CONTENT;
-    mReqMessage.seq = 0;
-    memset(&mReqMessage.timestamp, 0, sizeof(mReqMessage.timestamp));
-    //Tail
-    mReqMessage.crc16 = 0;
-    mReqMessage.tail = TextToUINT16(mTailHex);
+    int iSeq = StrToInt(gridDevices->Cells[COL_IDX_SEQ][rowidx]);
 
-    //Head
-    mRespMessage.head = HexToUINT16(mHeadHex);
-    mRespMessage.clen = TextToStream(gridDevices->Cells[COL_IDX_RESPMSG][rowidx],
-        mRespMessage.content, MAX_MESSAGE_LEN);
-    mRespMessage.seq = 0;
-    memset(&mRespMessage.timestamp, 0, sizeof(mRespMessage.timestamp));
-    //Len
-    mRespMessage.len = mRespMessage.clen + MESSAGE_LEN_EXCEPT_CONTENT;
-    //Tail
-    mRespMessage.crc16 = 0;
-    mRespMessage.tail = HexToUINT16(mTailHex);
-    
     // Building a new parameter
-    WorkParameter param;
-    param.Mode = WORK_MODE_SERIAL;
-    param.Configure = config;
-    param.DelayFrom = delayFrom;
-    param.DelayTo = delayTo;
-    param.ErrorFrom = errorFrom;
-    param.ErrorTo = errorTo;
-    param.HeadHex = mHeadHex;
-    param.TailHex = mTailHex;
 
-    WorkThread* thread;
-    if (modeStr == "Serial port"){
-        // create a new work thread
-        thread = new SerialWorkThread(param, &mReqMessage, &mRespMessage);
-        logger.Log("Create serial work thread "
-            + gridDevices->Cells[COL_IDX_ALIAS][rowidx] + ","
-            + param.Configure + ", [" + IntToStr(thread->ThreadID)
-            + "]");
+    if (iSeq > 0 && iSeq < (int)lstDeviceConfig.size()){
+        list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+        advance(cit, iSeq - 1); // Move ahead iSeq element
+        const device_config_t* pDevCfg = *cit;
+        WorkThread* thread;
+        if (pDevCfg->mode == WORK_MODE_SERIAL){
+            // create a new work thread
+            thread = new SerialWorkThread(pDevCfg);
+            logger.Log("Create serial work thread "
+                + gridDevices->Cells[COL_IDX_ALIAS][rowidx] + ","
+                + pDevCfg->configure + ", [" + IntToStr(thread->ThreadID)
+                + "]");
+        }else{
+            // create a new client thread
+            thread = new ClientWorkThread(pDevCfg);
+            logger.Log("Create client tcp work thread "
+                + gridDevices->Cells[COL_IDX_ALIAS][rowidx] + ","
+                + pDevCfg->configure + ", [" + IntToStr(thread->ThreadID) +
+                "]");
+        }
+        thread->Name = gridDevices->Cells[COL_IDX_ALIAS][rowidx];
+        thread->Tag = rowidx;
+        thread->OnOpenChannel = onOpenChannel;
+        thread->OnCloseChannel = onCloseChannel;
+        thread->OnRxMsg = onRxMsg;
+        thread->OnTxMsg = onTxMsg;
+        thread->OnErrMsg = onErrMsg;
+        thread->ActiveMode = chkActiveMode->Checked;
+        return thread;
     }else{
-        // create a new client thread
-        thread = new ClientWorkThread(param, &mReqMessage, &mRespMessage);
-        logger.Log("Create client tcp work thread "
-            + gridDevices->Cells[COL_IDX_ALIAS][rowidx] + ","
-            + param.Configure + ", [" + IntToStr(thread->ThreadID) +
-            "]");
+        return NULL;
     }
-    thread->Name = gridDevices->Cells[COL_IDX_ALIAS][rowidx];
-    thread->ErrorDistribution = distri;
-    thread->Tag = rowidx;
-    thread->OnOpenChannel = onOpenChannel;
-    thread->OnCloseChannel = onCloseChannel;
-    thread->OnRxMsg = onRxMsg;
-    thread->OnTxMsg = onTxMsg;
-    thread->OnErrMsg = onErrMsg;
-    thread->ActiveMode = chkActiveMode->Checked;
-    return thread;
 }
 //---------------------------------------------------------------------------
 // Operation button click event
@@ -204,6 +175,8 @@ void TFMain::ReloadConfigure()
     // Using INI file to load item(User Definied)
     TIniFile *ini;
     ini = new TIniFile( ChangeFileExt(Application->ExeName, ".INI" ) );
+    
+    // Load main configure
     AnsiString name = ini->ReadString("head", "Name", "");
     if (name.Length() > 0){
         this->Caption = "Device Simulator - " + name;
@@ -213,25 +186,24 @@ void TFMain::ReloadConfigure()
     mnuActivePassive->Checked = chkActiveMode->Checked;
     chkAutoReconn->Checked = ini->ReadBool("head", "AutoReconnect", true);
 
-    mHeadHex = ini->ReadString("Message", "Head", "DDBB");
-    mTailHex = ini->ReadString("Message", "Tail", "CCAA");
-
-    gridDevices->RowCount = 1;
+    //Load device configure into lstDeviceConfig
     String sectionName;
     String itemVal;
-    int seq = 1;
-    for (int i = 1; i <= devicecnt; i++){      
-        gridDevices->RowCount++;
+    device_config_t* pDevCfg;
+    for (int i = 1; i <= devicecnt; i++){
+        pDevCfg = new device_config_t();
+        pDevCfg->seq = i;
+
         sectionName = "Device" + IntToStr(i);
         itemVal = ini->ReadString(sectionName, "Alias", "X");
         if (itemVal == "X"){
             ShowMessage("Failure to load devices infomation from configure in "
                 + sectionName + ".Alias");
-            gridDevices->RowCount--;
+            delete pDevCfg;
             continue;
         }
-        gridDevices->Cells[COL_IDX_ALIAS][i] = itemVal;
-
+        pDevCfg->alias = itemVal;
+        
         itemVal = ini->ReadString(sectionName, "Mode", "X");
         if (itemVal == "X"){
             ShowMessage("Failure to load devices infomation from configure in "
@@ -239,8 +211,7 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_MODE][i] = itemVal;
-
+        pDevCfg->mode = GetModeFromStr(itemVal);
         itemVal = ini->ReadString(sectionName, "Configure", "X");
         if (itemVal == "X"){
             ShowMessage("Failure to load devices infomation from configure in "
@@ -248,64 +219,25 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_CONFIG][i] = itemVal;
-
-        itemVal = ini->ReadString(sectionName, "DelayFrom", "X");
-        if (itemVal == "X"){
-            ShowMessage("Failure to load devices infomation from configure in "
-                + sectionName + ".DelayFrom");
-            gridDevices->RowCount--;
-            continue;
-        }
-        gridDevices->Cells[COL_IDX_DELAY_FROM][i] = itemVal;
-
-        itemVal = ini->ReadString(sectionName, "DelayTo", "X");
-        if (itemVal == "X"){
-            ShowMessage("Failure to load devices infomation from configure in "
-                + sectionName + ".DelayTo");
-            gridDevices->RowCount--;
-            continue;
-        }
-        gridDevices->Cells[COL_IDX_DELAY_TO][i] = itemVal;
-
-        itemVal = ini->ReadString(sectionName, "ErrorFrom", "X");
-        if (itemVal == "X"){
-            ShowMessage("Failure to load devices infomation from configure in "
-                + sectionName + ".ErrorFrom");
-            gridDevices->RowCount--;
-            continue;
-        }
-        gridDevices->Cells[COL_IDX_ERROR_FROM][i] = itemVal;
+        pDevCfg->configure = itemVal;
+        pDevCfg->head = ini->ReadString(sectionName, "Head", "DDBB");
+        pDevCfg->tag = ini->ReadInteger(sectionName, "Tag", 1);
+        pDevCfg->delayFrom = ini->ReadInteger(sectionName, "DelayFrom", 3000);
+        pDevCfg->delayTo = ini->ReadInteger(sectionName, "DelayTo", 3000);
         
-        itemVal = ini->ReadString(sectionName, "ErrorTo", "X");
-        if (itemVal == "X"){
-            ShowMessage("Failure to load devices infomation from configure in "
-                + sectionName + ".ErrorTo");
-            gridDevices->RowCount--;
-            continue;
-        }
-        gridDevices->Cells[COL_IDX_ERROR_TO][i] = itemVal;
+        pDevCfg->message = ini->ReadString(sectionName, "Message", "12345");
+        pDevCfg->eofMessage = ini->ReadString(sectionName, "EOFMessage", "");
 
-        itemVal = ini->ReadString(sectionName, "RequestMsg", "1234567890");
-        gridDevices->Cells[COL_IDX_REQMSG][i] = itemVal;
-
-        itemVal = ini->ReadString(sectionName, "ResponseMsg", "9078563412");
-        gridDevices->Cells[COL_IDX_RESPMSG][i] = itemVal;
-
-        itemVal = ini->ReadString(sectionName, "ErrorDistribution", "No Error");
-        gridDevices->Cells[COL_IDX_ERROR_DISTRI][i] = itemVal;
-
-        gridDevices->Cells[COL_IDX_RX][i] = "0";
-        gridDevices->Cells[COL_IDX_TX][i] = "0";
-        gridDevices->Cells[COL_IDX_ERROR][i] = "0";
-
-        gridDevices->Cells[COL_IDX_SEQ][i] = IntToStr(seq);
-        seq++;
+        //Insert into proper position
+        lstDeviceConfig.push_back(pDevCfg);
     }
     delete ini;
+}
 
+void __fastcall TFMain::ReInitAllDeviceConfigure()
+{
     gridDevices->FixedRows = 1;
-    devicecnt = gridDevices->RowCount - 1;
+    int devicecnt = gridDevices->RowCount - 1;
     
     for (int i = 1; i <= devicecnt; i++){
         // create opeation button in every row
@@ -325,6 +257,39 @@ void TFMain::ReloadConfigure()
         wi.button = btn;
         wi.thread = CreateWorkThread(i);
         mWorkItems.insert(std::pair<int, WorkItem>(i, wi));
+    }
+}
+
+void __fastcall TFMain::UpdateUI()
+{
+    list<device_config_t*>::const_iterator it;
+    if (lstDeviceConfig.size() > 0){
+        gridDevices->RowCount = lstDeviceConfig.size() + 1;
+    }
+    const device_config_t* pDevCfg;
+    int row = 1;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        gridDevices->Cells[COL_IDX_ALIAS][row] = pDevCfg->alias;
+        gridDevices->Cells[COL_IDX_MODE][row] = GetModeStr(pDevCfg->mode);
+        gridDevices->Cells[COL_IDX_TAG][row] = pDevCfg->tag;
+        gridDevices->Cells[COL_IDX_CONFIG][row] = pDevCfg->configure;
+        gridDevices->Cells[COL_IDX_DELAY_FROM][row] = pDevCfg->delayFrom;
+        gridDevices->Cells[COL_IDX_DELAY_TO][row] = pDevCfg->delayTo;
+
+        gridDevices->Cells[COL_IDX_MESSAGE][row] = pDevCfg->message;
+        gridDevices->Cells[COL_IDX_EOFMSG][row] = pDevCfg->eofMessage;
+
+
+        gridDevices->Cells[COL_IDX_RX][row] = "0";
+        gridDevices->Cells[COL_IDX_TX][row] = "0";
+        gridDevices->Cells[COL_IDX_ERROR][row] = "0";
+
+        gridDevices->Cells[COL_IDX_SEQ][row] = pDevCfg->seq;
+        row++;
     }
 }
 void TFMain::SaveConfigure()
@@ -353,9 +318,6 @@ void TFMain::SaveConfigure()
         ini->WriteString(sectionName, "Configure", gridDevices->Cells[COL_IDX_CONFIG][i]);
         ini->WriteString(sectionName, "DelayFrom", gridDevices->Cells[COL_IDX_DELAY_FROM][i]);
         ini->WriteString(sectionName, "DelayTo", gridDevices->Cells[COL_IDX_DELAY_TO][i]);
-        ini->WriteString(sectionName, "ErrorFrom", gridDevices->Cells[COL_IDX_ERROR_FROM][i]);
-        ini->WriteString(sectionName, "ErrorTo", gridDevices->Cells[COL_IDX_ERROR_TO][i]);
-        ini->WriteString(sectionName, "ErrorDistribution", gridDevices->Cells[COL_IDX_ERROR_DISTRI][i]);
     }
     delete ini;
 }
@@ -400,8 +362,8 @@ void TFMain::TerminateAllThread()
         it != mWorkItems.end();
         ++it){
         WorkThread* thread = (*it).second.thread;
-        thread->Stop();
-        thread->Terminate();
+        //thread->Stop();
+        //thread->Terminate();
         delete thread;
         (*it).second.thread = NULL;
 
@@ -435,35 +397,16 @@ void __fastcall TFMain::gridDevicesDblClick(TObject *Sender)
 }
 bool TFMain::EditRow(int selRow)
 {
-    DeviceSetting->Seq = selRow;
-    DeviceSetting->Alias = gridDevices->Cells[COL_IDX_ALIAS][selRow];
-    DeviceSetting->Mode = GetModeFromStr(gridDevices->Cells[COL_IDX_MODE][selRow]);
-    DeviceSetting->Configure = gridDevices->Cells[COL_IDX_CONFIG][selRow];
-    DeviceSetting->DelayFrom = StrToInt(gridDevices->Cells[COL_IDX_DELAY_FROM][selRow]);
-    DeviceSetting->DelayTo = StrToInt(gridDevices->Cells[COL_IDX_DELAY_TO][selRow]);
-    DeviceSetting->ErrorFrom = StrToInt(gridDevices->Cells[COL_IDX_ERROR_FROM][selRow]);
-    DeviceSetting->ErrorTo = StrToInt(gridDevices->Cells[COL_IDX_ERROR_TO][selRow]);
-    DeviceSetting->RequestMsg = gridDevices->Cells[COL_IDX_REQMSG][selRow];
-    DeviceSetting->ResponseMsg = gridDevices->Cells[COL_IDX_RESPMSG][selRow];
-    DeviceSetting->ErrorDistribution = GetDistributionFromDesc(
-                    gridDevices->Cells[COL_IDX_ERROR_DISTRI][selRow]);
+    list<device_config_t*>::iterator it = lstDeviceConfig.begin();
+    advance(it, selRow - 1); // Move ahead iSeq element
+    DeviceSetting->BindConfig(*it);
     // update to setting dialog
     DeviceSetting->InvalidUI();
     if (mrOk == DeviceSetting->ShowModal()){
         configModified = true;  // Will prompt user to save configure
         DeviceSetting->UpdateFromUI();
         // Update to grid cells
-        gridDevices->Cells[COL_IDX_ALIAS][selRow] = DeviceSetting->Alias;
-        gridDevices->Cells[COL_IDX_MODE][selRow] = GetModeStr(DeviceSetting->Mode);
-        gridDevices->Cells[COL_IDX_CONFIG][selRow] = DeviceSetting->Configure;
-        gridDevices->Cells[COL_IDX_DELAY_FROM][selRow] = IntToStr(DeviceSetting->DelayFrom);
-        gridDevices->Cells[COL_IDX_DELAY_TO][selRow] = IntToStr(DeviceSetting->DelayTo);
-        gridDevices->Cells[COL_IDX_ERROR_FROM][selRow] = IntToStr(DeviceSetting->ErrorFrom);
-        gridDevices->Cells[COL_IDX_ERROR_TO][selRow] = IntToStr(DeviceSetting->ErrorTo);
-        gridDevices->Cells[COL_IDX_REQMSG][selRow] = DeviceSetting->RequestMsg;
-        gridDevices->Cells[COL_IDX_RESPMSG][selRow] = DeviceSetting->ResponseMsg;
-        gridDevices->Cells[COL_IDX_ERROR_DISTRI][selRow] =
-            GetDistributionDesc(DeviceSetting->ErrorDistribution);
+        UpdateUI();
 
         if (mWorkItems.find(selRow) != mWorkItems.end()){
             WorkThread* thread = mWorkItems[selRow].thread;
@@ -519,8 +462,10 @@ void __fastcall TFMain::UpdateOpenStatus(TMessage* Msg)
     TBitBtn* button = mWorkItems[rowidx].button;
     if (opened){
         button->Glyph->LoadFromResourceID((int)HInstance, 102);
+        button->Caption = "Close";
         button->Tag = rowidx | BUTTON_STATUS_STOP;
     }else{
+        button->Caption = "Open";
         ShowMessage("Open channel error in "
             + gridDevices->Cells[COL_IDX_ALIAS][rowidx]
             + "\r\n Configure:" + gridDevices->Cells[COL_IDX_CONFIG][rowidx]);
@@ -538,12 +483,14 @@ void __fastcall TFMain::UpdateCloseStatus(TMessage* Msg)
     TBitBtn* button = mWorkItems[rowidx].button;
     if (closed){
         button->Glyph->LoadFromResourceID((int)HInstance, 101);
+        button->Caption = "Open";
         button->Tag = rowidx;
     }else{
         ShowMessage("Open channel error in "
             + gridDevices->Cells[COL_IDX_ALIAS][rowidx]
             + "\r\n Configure:" + gridDevices->Cells[COL_IDX_CONFIG][rowidx]);
         button->Glyph->LoadFromResourceID((int)HInstance, 102);
+        button->Caption = "Close";
         button->Tag = rowidx | BUTTON_STATUS_STOP;
     }
 
@@ -571,7 +518,7 @@ void __fastcall TFMain::UpdateErrMsgCnt(TMessage* Msg)
 }
 //---------------------------------------------------------------------------
 // Show operation button in correct row
-void TFMain::UpdateOperationUI()
+void __fastcall TFMain::UpdateOperationUI()
 {
     // Update operation button position
     int startRowIdx = gridDevices->TopRow;
@@ -659,6 +606,16 @@ void __fastcall TFMain::FormClose(TObject *Sender, TCloseAction &Action)
     Application->ProcessMessages();
     TerminateAllThread();
     palPrompt->Visible = false;
+
+    //Clear data
+    list<device_config_t*>::iterator it;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it){
+         device_config_t* pDevCfg = *it;
+         delete pDevCfg;
+    }
+    lstDeviceConfig.clear();
 }
 //---------------------------------------------------------------------------
 
@@ -801,8 +758,6 @@ void __fastcall TFMain::btnAddItemClick(TObject *Sender)
         gridDevices->Cells[COL_IDX_CONFIG][rowidx] = "COM1,115200,N,8,1";
         gridDevices->Cells[COL_IDX_DELAY_FROM][rowidx] = "4000";
         gridDevices->Cells[COL_IDX_DELAY_TO][rowidx] = "4000";
-        gridDevices->Cells[COL_IDX_ERROR_FROM][rowidx] = "0";
-        gridDevices->Cells[COL_IDX_ERROR_TO][rowidx] = "0";
         gridDevices->Cells[COL_IDX_RX][rowidx] = "0";
         gridDevices->Cells[COL_IDX_TX][rowidx] = "0";
         gridDevices->Cells[COL_IDX_ERROR][rowidx] = "0";
@@ -889,8 +844,6 @@ void __fastcall TFMain::btnBatchAddClick(TObject *Sender)
                 gridDevices->Cells[COL_IDX_CONFIG][rowidx] = "COM1,115200,N,8,1";
                 gridDevices->Cells[COL_IDX_DELAY_FROM][rowidx] = "4000";
                 gridDevices->Cells[COL_IDX_DELAY_TO][rowidx] = "4000";
-                gridDevices->Cells[COL_IDX_ERROR_FROM][rowidx] = "0";
-                gridDevices->Cells[COL_IDX_ERROR_TO][rowidx] = "0";
                 gridDevices->Cells[COL_IDX_RX][rowidx] = "0";
                 gridDevices->Cells[COL_IDX_TX][rowidx] = "0";
                 gridDevices->Cells[COL_IDX_ERROR][rowidx] = "0";
@@ -943,37 +896,7 @@ void __fastcall TFMain::chkAutoReconnClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
-void __fastcall TFMain::UniformDistribution1Click(TObject *Sender)
-{
-    UniformDistribution1->Checked = !UniformDistribution1->Checked;
-    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
-        it != mWorkItems.end();
-        ++it){
-        WorkThread* thread = (*it).second.thread;
-        if (thread != NULL){
-            thread->Seed = seed;
-            thread->ErrorDistribution = UNIFORM_DISTRIBUTION;
-        }
-    }
 
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TFMain::PossionDistribution1Click(TObject *Sender)
-{
-    PossionDistribution1->Checked = !PossionDistribution1->Checked;
-
-    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
-        it != mWorkItems.end();
-        ++it){
-        WorkThread* thread = (*it).second.thread;
-        if (thread != NULL){
-            thread->Seed = seed;
-            thread->ErrorDistribution = POISSON_DISTRIBUTION;
-        }
-    }
-}
-//---------------------------------------------------------------------------
 
 void __fastcall TFMain::btnResetCountClick(TObject *Sender)
 {
@@ -1008,19 +931,4 @@ void __fastcall TFMain::Dispatch(void *Message)
         break;
     }
 }
-void __fastcall TFMain::NoError1Click(TObject *Sender)
-{
-    NoError1->Checked = !NoError1->Checked;
-
-    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
-        it != mWorkItems.end();
-        ++it){
-        WorkThread* thread = (*it).second.thread;
-        if (thread != NULL){
-            thread->Seed = seed;
-            thread->ErrorDistribution = NO_ERROR_DISTRIBUTION;
-        }
-    }
-}
-//---------------------------------------------------------------------------
 

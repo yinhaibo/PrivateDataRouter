@@ -3,7 +3,7 @@ object DeviceSetting: TDeviceSetting
   Top = 215
   BorderStyle = bsDialog
   Caption = 'Device Configure'
-  ClientHeight = 313
+  ClientHeight = 259
   ClientWidth = 407
   Color = clBtnFace
   ParentFont = True
@@ -15,7 +15,7 @@ object DeviceSetting: TDeviceSetting
     Left = 8
     Top = 8
     Width = 393
-    Height = 257
+    Height = 209
     Shape = bsFrame
   end
   object Label1: TLabel
@@ -34,94 +34,73 @@ object DeviceSetting: TDeviceSetting
   end
   object Label3: TLabel
     Left = 38
-    Top = 64
+    Top = 88
     Width = 30
     Height = 13
     Caption = 'Mode:'
   end
   object Label4: TLabel
     Left = 20
-    Top = 93
+    Top = 117
     Width = 48
     Height = 13
     Caption = 'Configure:'
   end
   object Label5: TLabel
     Left = 38
-    Top = 114
+    Top = 138
     Width = 30
     Height = 13
     Caption = 'Delay:'
   end
-  object Label6: TLabel
-    Left = 43
-    Top = 138
-    Width = 25
-    Height = 13
-    Caption = 'Error:'
-  end
   object Label7: TLabel
-    Left = 76
-    Top = 115
-    Width = 26
-    Height = 13
-    Caption = 'From:'
-  end
-  object Label8: TLabel
-    Left = 180
-    Top = 116
-    Width = 16
-    Height = 13
-    Caption = 'To:'
-  end
-  object Label9: TLabel
-    Left = 180
-    Top = 140
-    Width = 16
-    Height = 13
-    Caption = 'To:'
-  end
-  object Label10: TLabel
     Left = 76
     Top = 139
     Width = 26
     Height = 13
     Caption = 'From:'
   end
+  object Label8: TLabel
+    Left = 180
+    Top = 140
+    Width = 16
+    Height = 13
+    Caption = 'To:'
+  end
   object Label11: TLabel
     Left = 19
     Top = 187
-    Width = 97
+    Width = 82
     Height = 13
-    Caption = 'Response Message:'
+    Caption = 'Ending Message:'
   end
   object Label12: TLabel
-    Left = 27
+    Left = 53
     Top = 166
-    Width = 89
+    Width = 46
     Height = 13
-    Caption = 'Request Message:'
+    Caption = 'Message:'
   end
   object Label13: TLabel
     Left = 362
     Top = 165
-    Width = 25
+    Width = 33
     Height = 13
-    Caption = '(Hex)'
+    Caption = '(ASCII)'
   end
   object Label14: TLabel
     Left = 362
     Top = 188
-    Width = 25
+    Width = 33
     Height = 13
-    Caption = '(Hex)'
+    Caption = '(ASCII)'
   end
-  object Label15: TLabel
-    Left = 35
-    Top = 211
-    Width = 80
+  object Label6: TLabel
+    Left = 43
+    Top = 64
+    Width = 22
     Height = 13
-    Caption = 'Error Distribution:'
+    Caption = 'Tag:'
   end
   object txtSeq: TEdit
     Left = 72
@@ -140,7 +119,7 @@ object DeviceSetting: TDeviceSetting
   end
   object cboMode: TComboBox
     Left = 72
-    Top = 60
+    Top = 84
     Width = 105
     Height = 21
     Style = csDropDownList
@@ -152,7 +131,7 @@ object DeviceSetting: TDeviceSetting
   end
   object txtConfigure: TEdit
     Left = 72
-    Top = 88
+    Top = 112
     Width = 241
     Height = 21
     Enabled = False
@@ -160,7 +139,7 @@ object DeviceSetting: TDeviceSetting
   end
   object btnSetting: TButton
     Left = 320
-    Top = 88
+    Top = 112
     Width = 41
     Height = 21
     Caption = '...'
@@ -169,7 +148,7 @@ object DeviceSetting: TDeviceSetting
   end
   object txtDelayFrom: TEdit
     Left = 104
-    Top = 112
+    Top = 136
     Width = 49
     Height = 21
     Hint = 'Dealy a random seconds between from and to value.'
@@ -180,7 +159,7 @@ object DeviceSetting: TDeviceSetting
   end
   object udDelayFrom: TUpDown
     Left = 153
-    Top = 112
+    Top = 136
     Width = 16
     Height = 21
     Associate = txtDelayFrom
@@ -193,7 +172,7 @@ object DeviceSetting: TDeviceSetting
   end
   object txtDelayTo: TEdit
     Left = 208
-    Top = 112
+    Top = 136
     Width = 49
     Height = 21
     Hint = 'Dealy a random seconds between from and to value.'
@@ -204,7 +183,7 @@ object DeviceSetting: TDeviceSetting
   end
   object udDelayTo: TUpDown
     Left = 257
-    Top = 112
+    Top = 136
     Width = 16
     Height = 21
     Associate = txtDelayTo
@@ -215,60 +194,14 @@ object DeviceSetting: TDeviceSetting
     TabOrder = 8
     Wrap = False
   end
-  object udErrorTo: TUpDown
-    Left = 257
-    Top = 136
-    Width = 16
-    Height = 21
-    Associate = txtErrorTo
-    Min = 0
-    Max = 10000
-    Position = 0
-    TabOrder = 9
-    Wrap = False
-  end
-  object txtErrorTo: TEdit
-    Left = 208
-    Top = 136
-    Width = 49
-    Height = 21
-    Hint = 'Generate a random error between from and to milliseconds.'
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 10
-    Text = '0'
-  end
-  object udErrorFrom: TUpDown
-    Left = 153
-    Top = 136
-    Width = 16
-    Height = 21
-    Associate = txtErrorFrom
-    Min = 0
-    Max = 10000
-    Position = 0
-    TabOrder = 11
-    Wrap = False
-  end
-  object txtErrorFrom: TEdit
-    Left = 104
-    Top = 136
-    Width = 49
-    Height = 21
-    Hint = 'Generate a random error between from and to milliseconds.'
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 12
-    Text = '0'
-  end
   object BitBtn1: TBitBtn
     Left = 240
-    Top = 280
+    Top = 224
     Width = 75
     Height = 25
     Caption = '&OK'
     ModalResult = 1
-    TabOrder = 13
+    TabOrder = 9
     Glyph.Data = {
       F6000000424DF600000000000000760000002800000010000000100000000100
       04000000000080000000CE0E0000C40E00001000000000000000000000000000
@@ -281,12 +214,12 @@ object DeviceSetting: TDeviceSetting
   end
   object BitBtn2: TBitBtn
     Left = 320
-    Top = 280
+    Top = 224
     Width = 75
     Height = 25
     Caption = '&Cancel'
     ModalResult = 2
-    TabOrder = 14
+    TabOrder = 10
     Glyph.Data = {
       F6000000424DF600000000000000760000002800000010000000100000000100
       04000000000080000000CE0E0000C40E00001000000000000000000000000000
@@ -307,7 +240,7 @@ object DeviceSetting: TDeviceSetting
       'mode.'
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 15
+    TabOrder = 11
   end
   object txtResponseMessage: TEdit
     Left = 120
@@ -317,35 +250,13 @@ object DeviceSetting: TDeviceSetting
     Hint = 
       'This message will be send while device received a request messag' +
       'e. Only work in passivity mode.'
-    TabOrder = 16
+    TabOrder = 12
   end
-  object rbUniform: TRadioButton
-    Left = 120
-    Top = 210
-    Width = 113
-    Height = 17
-    Caption = 'Uniform distribution'
-    Checked = True
-    TabOrder = 17
-    TabStop = True
-    OnClick = rbUniformClick
-  end
-  object rbPoisson: TRadioButton
-    Left = 120
-    Top = 226
-    Width = 113
-    Height = 17
-    Caption = 'Poisson distribution'
-    TabOrder = 18
-    OnClick = rbPoissonClick
-  end
-  object rbNoError: TRadioButton
-    Left = 120
-    Top = 242
-    Width = 113
-    Height = 17
-    Caption = 'No error'
-    TabOrder = 19
-    OnClick = rbNoErrorClick
+  object txtTag: TEdit
+    Left = 72
+    Top = 60
+    Width = 41
+    Height = 21
+    TabOrder = 13
   end
 end

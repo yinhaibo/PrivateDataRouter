@@ -16,170 +16,6 @@ extern LogFileEx logger;
 
 #include "UAlgorithm.h"
 
-AnsiString GetDistributionDesc(distribution_t distri)
-{
-    switch(distri){
-    case UNIFORM_DISTRIBUTION:
-        return "Uniform";
-    case POISSON_DISTRIBUTION:
-        return "Poisson";
-    case NO_ERROR_DISTRIBUTION:
-    default:
-        return "No Error";
-    }
-}
-
-distribution_t GetDistributionFromDesc(AnsiString desc)
-{
-    if (desc == "Uniform"){
-        return UNIFORM_DISTRIBUTION;
-    }else if(desc == "Poisson"){
-        return POISSON_DISTRIBUTION;
-    }else{
-        return NO_ERROR_DISTRIBUTION;
-    }
-}
-//---------------------------------------------------------------------------
-WorkParameter::WorkParameter(const WorkParameter& value)
-{
-    this->Mode = value.Mode;
-    this->Configure = value.Configure;
-    this->DelayFrom = value.DelayTo;
-    this->DelayTo = value.DelayTo;
-    this->ErrorFrom = value.ErrorFrom;
-    this->ErrorTo = value.ErrorTo;
-    this->HeadHex = value.HeadHex;
-    this->TailHex = value.TailHex;
-}
-WorkParameter WorkParameter::operator=(const WorkParameter& value)
-{
-    this->Mode = value.Mode;
-    this->Configure = value.Configure;
-    this->DelayFrom = value.DelayTo;
-    this->DelayTo = value.DelayTo;
-    this->ErrorFrom = value.ErrorFrom;
-    this->ErrorTo = value.ErrorTo;
-    this->HeadHex = value.HeadHex;
-    this->TailHex = value.TailHex;
-
-    return *this;
-}
-WorkMode __fastcall  WorkParameter::fGetMode(void) const
-{
-    return mMode;
-}
-
-void        __fastcall  WorkParameter::fSetMode(WorkMode val)
-{
-    if (val != mMode){
-        mMode = val;
-    }
-}
-
-AnsiString  __fastcall  WorkParameter::fGetConfigure(void) const
-{
-    return mConfigure;
-}
-
-void        __fastcall  WorkParameter::fSetConfigure(AnsiString val)
-{
-    if (val != mConfigure){
-        mConfigure = val;
-    }
-}
-
-int         __fastcall  WorkParameter::fGetDelayFrom(void) const
-{
-    return delayFrom;
-}
-
-void        __fastcall  WorkParameter::fSetDelayFrom(int val)
-{
-    if (val != delayFrom){
-        delayFrom = val;
-    }
-}
-
-int         __fastcall  WorkParameter::fGetDelayTo(void) const
-{
-    return delayTo;
-}
-
-void        __fastcall  WorkParameter::fSetDelayTo(int val)
-{
-    if (val != delayTo){
-        delayTo = val;
-    }
-}
-
-int         __fastcall  WorkParameter::fGetErrorFrom(void) const
-{
-    return errorFrom;
-}
-
-
-void        __fastcall  WorkParameter::fSetErrorFrom(int val)
-{
-    if (val != errorFrom){
-        errorFrom = val;
-    }
-}
-
-int         __fastcall  WorkParameter::fGetErrorTo(void) const
-{
-    return errorTo;
-}
-
-
-void        __fastcall  WorkParameter::fSetErrorTo(int val)
-{
-    if (val != errorTo){
-        errorTo = val;
-    }
-}
-void __fastcall WorkParameter::SetRequestMsg(AnsiString value)
-{
-    if(FRequestMsg != value) {
-        FRequestMsg = value;
-    }
-}
-AnsiString __fastcall WorkParameter::GetRequestMsg()
-{
-    return FRequestMsg;
-}
-
-void __fastcall WorkParameter::SetResponseMsg(AnsiString value)
-{
-    if(FResponseMsg != value) {
-        FResponseMsg = value;
-    }
-}
-AnsiString __fastcall WorkParameter::GetResponseMsg()
-{
-    return FResponseMsg;
-}
-
-void __fastcall WorkParameter::SetHeadHex(AnsiString value)
-{
-    if(FHeadHex != value) {
-        FHeadHex = value;
-    }
-}
-AnsiString __fastcall WorkParameter::GetHeadHex() const
-{
-    return FHeadHex;
-}
-
-void __fastcall WorkParameter::SetTailHex(AnsiString value)
-{
-    if(FTailHex != value) {
-        FTailHex = value;
-    }
-}
-AnsiString __fastcall WorkParameter::GetTailHex() const
-{
-    return FTailHex;
-}
 //---------------------------------------------------------------------------
 
 //   Important: Methods and properties of objects in VCL can only be
@@ -195,23 +31,29 @@ AnsiString __fastcall WorkParameter::GetTailHex() const
 //      }
 //---------------------------------------------------------------------------
 
-__fastcall WorkThread::WorkThread(const WorkParameter& param,
-    const message_t* preqMsg,
-    const message_t* prespMsg)
-    : TThread(true), mParam(param)
+__fastcall WorkThread::WorkThread(const device_config_t* pDevCfg)
+    : TThread(true), mpDevCfg(pDevCfg)
 {
     errorMsgPerMsg = -1;
     respMsgCnt = 0;
     reconnectTick = 0;
     FPeerReady = false;
     sendSeq = 1; //reset send sequence number
-    
-    memcpy(&mReqMsg, preqMsg, sizeof(message_t));
-    memcpy(&mRespMsg, prespMsg, sizeof(message_t));
-    memcpy(&mRespErrMsg, &mRespMsg, sizeof(message_t));
-    mRespErrMsg.len = 0;
-    mRespErrMsg.content[0] = '\0';
+    mRecvLen = 0;
 
+    memset((void*)&mMessage, 0, sizeof(mMessage));
+    memset((void*)&mEOFMessage, 0, sizeof(mEOFMessage));
+    CREATE_MESSAGE(mMessage, pDevCfg->head, pDevCfg->tag,
+        1, pDevCfg->message);
+    CREATE_MESSAGE(mEOFMessage, pDevCfg->head, pDevCfg->tag,
+        1, pDevCfg->eofMessage); 
+    //memcpy(&mRespMsg, prespMsg, sizeof(message_t));
+    //memcpy(&mRespErrMsg, &mRespMsg, sizeof(message_t));
+    //mRespErrMsg.len = 0;
+    //mRespErrMsg.content[0] = '\0';
+    memset(&mReceiveMsgBuf, 0, sizeof(mReceiveMsgBuf));
+    memset(&mSendMsgBuf, 0, sizeof(mSendMsgBuf));
+    
     mMsgStatus = RECV_MSG_STATUS_HEAD;
 }
 //---------------------------------------------------------------------------
@@ -248,13 +90,7 @@ void __fastcall WorkThread::Stop()
 //---------------------------------------------------------------------------
 int __fastcall WorkThread::getRandRange(int from , int to)
 {
-    if (FErrorDistribution == UNIFORM_DISTRIBUTION){
-        return from + 0.5 + ran1(&FSeed) * (to - from);
-    }else if(FErrorDistribution == POISSON_DISTRIBUTION){
-        return from + 0.5 + poidev((to - from)/2, &FSeed);
-    }else{
-        return from;
-    }
+    return from + 0.5 + ran1(&FSeed) * (to - from);
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Execute()
@@ -266,14 +102,10 @@ void __fastcall WorkThread::Execute()
     unsigned int requestTick = 0;
     unsigned int lastRequestTick = 0;
     message_t receiveMsg;
+
+    msgStatus = MESSAGE_SEND_MESSAGE; // At first, Send a message with inforation
     //---- Place thread code here ----
     while(!this->Terminated){
-
-        // reinitiliaze error factor
-        if (errorMsgPerMsg == -1){
-            // Generate error parameter in random way
-            errorMsgPerMsg = getRandRange(mParam.ErrorFrom, mParam.ErrorTo);
-        }
         while (!this->Terminated && mIsRunning){
             if (reconnectTick > 0){
                 if ((GetTickCount() - reconnectTick) > 3000){
@@ -290,46 +122,79 @@ void __fastcall WorkThread::Execute()
                     // save current tick
                     lastRequestTick = ::GetTickCount();
                     // generate next step's delay tick
-                    requestTick = getRandRange(mParam.DelayFrom, mParam.DelayTo);
+                    requestTick = getRandRange(mpDevCfg->delayFrom, mpDevCfg->delayTo);
                     // Send message
-                    LogMsg("Tx, Seq:" + IntToStr(sendSeq));
-                    mReqMsg.seq = sendSeq & 0xFF;
-                    fillMessageStruct(mReqMsg);
-                    if (onSendMessage(mReqMsg)){
-                        txMsgCnt++;
+
+                    if (msgStatus == MESSAGE_SEND_MESSAGE)
+                    {
+                        LogMsg("Tx, Seq:" + IntToStr(sendSeq) + " Message");
+                        if (mMessage.seq != sendSeq){
+                            // Only renew the message while send sequence has changed.
+                            fillMessageStruct(mMessage);
+                        }
+                        if (onSendMessage(mMessage, 0)){
+                            txMsgCnt++;
+                        }
+                    }else{
+                        LogMsg("Tx, Seq:" + IntToStr(sendSeq) + " EOF Message");
+                        if (mEOFMessage.seq != sendSeq){
+                            // Only renew the message while send sequence has changed.
+                            fillMessageStruct(mEOFMessage);
+                        }
+                        if (onSendMessage(mEOFMessage, 0)){
+                            txMsgCnt++;
+                        }
                     }
                 }
                 // receive message
                 message_t* pmsg = onReceiveMessage();
                 if (pmsg != NULL){
-                    rxMsgCnt++;
                     memcpy(&receiveMsg, pmsg, sizeof(message_t));
-                    // when the message is response messsage, increment seqence number of sending
-                    // when the message is request message, is a active message, need response it.
-                    if (memcmp(&receiveMsg, &mRespMsg, sizeof(message_t)) == 0){
-                        //Send success
-                        LogMsg("Rx, Seq:" + IntToStr(sendSeq));
-                        sendSeq++; //Success
-                    }else if(memcmp(&receiveMsg, &mReqMsg, sizeof(message_t)) == 0){
-                        // Resonse error message while random factor has hit
-                        // or send correct message
-                        if (errorMsgPerMsg > 0 && respMsgCnt >= errorMsgPerMsg){
-                            if (FPeerReady){
-                                LogMsg("Response error message randomly");
-                                fillMessageStruct(mRespErrMsg);
-                                onSendMessage(mRespErrMsg);
-                                respMsgCnt = 0;
-                                errorMsgPerMsg = getRandRange(mParam.ErrorFrom, mParam.ErrorTo);
+                    if (bMessageOK){
+                        // There is a response message while their has a same tag field.
+                        if (pmsg->tag == mpDevCfg->tag){
+                            if (msgStatus == MESSAGE_SEND_MESSAGE)
+                            {
+                                if (receiveMsg.seq == mMessage.seq &&
+                                    receiveMsg.clen == mMessage.clen &&
+                                    receiveMsg.crc16 == mMessage.crc16)
+                                {
+                                    msgStatus = MESSAGE_SEND_EOFMESSAGE;
+                                    fillMessageStruct(mEOFMessage);
+                                    //Send correct message immediately
+                                    onSendMessage(mEOFMessage, 0);
+                                }else{
+                                    // Error seq or len or content, resend
+                                    onSendMessage(mMessage, 0);
+                                    errMsgCnt++;
+                                }
+                            }else{
+                                if (receiveMsg.seq == mEOFMessage.seq &&
+                                    receiveMsg.clen == mEOFMessage.clen &&
+                                    receiveMsg.crc16 == mEOFMessage.crc16)
+                                {
+                                    rxMsgCnt++;
+                                    //Send success
+                                    LogMsg("Rx, Seq:" + IntToStr(sendSeq));
+                                    sendSeq++; //Success
+                                    msgStatus = MESSAGE_SEND_MESSAGE;
+                                    // Wait a time space to send
+                                }else{
+                                    // Error seq or len or content, resend
+                                    onSendMessage(mEOFMessage, 0);
+                                    errMsgCnt++;
+                                }
                             }
                         }else{
+                            // Resonse message
+                            // Just copy that and back it.
                             if (FPeerReady){
                                 respMsgCnt++;
                                 LogMsg("Response message");
-                                fillMessageStruct(mRespMsg);
-                                onSendMessage(mRespMsg);
+                                onSendMessage(receiveMsg, 0);
                             }
+                            txMsgCnt++;
                         }
-                        txMsgCnt++;
                     }else{
                         LogMsg("Rx Error, Seq:" + IntToStr(sendSeq) + "->" + StreamToText(receiveMsg.content, sizeof(receiveMsg.len)));
                         errMsgCnt++;
@@ -341,30 +206,21 @@ void __fastcall WorkThread::Execute()
             ////////////////////////////////////////////////
 
                 // In passive mode, the thread receive message from peer
-                // and check and response message
+                // and check and response message.
+                // In passive mode, these is no error message.
                 message_t* pmsg = onReceiveMessage();
                 if (pmsg != NULL){
                     rxMsgCnt++;
                     memcpy(&receiveMsg, pmsg, sizeof(message_t));
-                    if (memcmp(&receiveMsg, &mReqMsg, sizeof(message_t)) == 0){
-                        if (errorMsgPerMsg > 0 && respMsgCnt >= errorMsgPerMsg){
-                            if (FPeerReady){
-                                LogMsg("Response error message");
-                                fillMessageStruct(mRespErrMsg);
-                                onSendMessage(mRespErrMsg);
-                                respMsgCnt = 0;
-                                errorMsgPerMsg = getRandRange(mParam.ErrorFrom, mParam.ErrorTo);
-                            }
-                        }else{
-                            if (FPeerReady){
-                                LogMsg("Response message");
-                                respMsgCnt++;
-                                fillMessageStruct(mRespMsg);
-                                onSendMessage(mRespMsg);
-                            }
+                    if (bMessageOK){
+                        if (FPeerReady){
+                            LogMsg("Response message");
+                            respMsgCnt++;
+                            onSendMessage(receiveMsg, 0);
                         }
                         txMsgCnt++;
                     }else{
+                        LogMsg("!!!IMPOSSIBLE!!!");
                         errMsgCnt++;
                     }
                 }
@@ -411,7 +267,7 @@ void __fastcall WorkThread::Execute()
     }
 }
 //---------------------------------------------------------------------------
-bool __fastcall WorkThread::onSendMessage(message_t& msg)
+bool __fastcall WorkThread::onSendMessage(message_t& msg, int error)
 {
     int wpos = 0;
     int headpartlen = offsetof(message_t, content);
@@ -420,13 +276,15 @@ bool __fastcall WorkThread::onSendMessage(message_t& msg)
     memcpy(sendRawBuff + wpos, msg.content, msg.clen);
     wpos += msg.clen;
     //CRC16
-    msg.crc16 = crc16_cal(sendRawBuff, msg.len - MESSAGE_CRC_LEN - MESSAGE_TAIL_LEN);
+    msg.crc16 = crc16_cal(sendRawBuff, msg.len - MESSAGE_CRC_LEN);
     memcpy(sendRawBuff + wpos, &msg.crc16, sizeof(msg.crc16));
     wpos += sizeof(msg.crc16);
-    memcpy(sendRawBuff + wpos, &msg.tail, sizeof(msg.tail));
-    wpos += sizeof(msg.tail);
     
     sendPos = 0;
+    if (error > 0){
+        // Write a error message
+        sendRawBuff[error % wpos] = ~sendRawBuff[error % wpos];
+    }
     int sendLen = sendData(sendRawBuff, wpos);
     return (sendLen == wpos);
 }
@@ -436,8 +294,6 @@ message_t* __fastcall WorkThread::onReceiveMessage()
     int rvRecv;
     unsigned short rvCRC16;
     unsigned short head;
-    unsigned short tail;
-    unsigned short msglen;
     if(!(hasDataRead)){
         return NULL;
     }
@@ -449,8 +305,7 @@ message_t* __fastcall WorkThread::onReceiveMessage()
         if (rvRecv != MESSAGE_HEAD_LEN){
             return NULL;
         }
-        head = TextToUINT16(mParam.HeadHex);
-        if (*(unsigned short*)recvRawBuff == head){
+        if (*(unsigned short*)recvRawBuff == mMessage.head){
             //Success receive head information and skip to next step
             receivePos = 0;
             mMsgStatus = RECV_MSG_STATUS_LEN;
@@ -461,18 +316,24 @@ message_t* __fastcall WorkThread::onReceiveMessage()
     case RECV_MSG_STATUS_LEN:
         // Receive message len
         rvRecv = receiveData((unsigned char*)&recvRawBuff + MESSAGE_HEAD_LEN, MESSAGE_LEN_LEN);
+        if (rvRecv == -1){
+            mMsgStatus = RECV_MSG_STATUS_HEAD;
+        }
         if (rvRecv != MESSAGE_LEN_LEN){
             return NULL;
         }else{
             receivePos = 0;
             mMsgStatus = RECV_MSG_STATUS_DATA;
-            msglen = *(unsigned short*)(recvRawBuff + MESSAGE_HEAD_LEN);
+            mRecvLen = *(unsigned short*)(recvRawBuff + MESSAGE_HEAD_LEN);
         }
         //pass through
     case RECV_MSG_STATUS_DATA:
         rvRecv = receiveData((unsigned char*)&recvRawBuff + MESSAGE_HEAD_LEN + MESSAGE_LEN_LEN,
-            msglen - MESSAGE_HEAD_LEN - MESSAGE_LEN_LEN);
-        if (rvRecv != msglen - MESSAGE_HEAD_LEN - MESSAGE_LEN_LEN){
+            mRecvLen - MESSAGE_HEAD_LEN - MESSAGE_LEN_LEN);
+        if (rvRecv == -1){
+            mMsgStatus = RECV_MSG_STATUS_HEAD;
+        }
+        if (rvRecv != mRecvLen - MESSAGE_HEAD_LEN - MESSAGE_LEN_LEN){
             return NULL;
         }
         //and skip to next step
@@ -485,16 +346,14 @@ message_t* __fastcall WorkThread::onReceiveMessage()
         memcpy(mReceiveMsgBuf.content, recvRawBuff + offsetof(message_t, content),
             mReceiveMsgBuf.clen);
         memcpy(&mReceiveMsgBuf.crc16, recvRawBuff +
-            mReceiveMsgBuf.len - MESSAGE_CRC_LEN - MESSAGE_TAIL_LEN,
-            MESSAGE_CRC_LEN + MESSAGE_TAIL_LEN);
-        tail = TextToUINT16(mParam.TailHex);
-        if (tail == mReceiveMsgBuf.tail){ // Has a correct message tail
-            //Success receive data information and check the message
-            rvCRC16 = crc16_cal(recvRawBuff, mReceiveMsgBuf.len - MESSAGE_CRC_LEN - MESSAGE_TAIL_LEN);
-            if (rvCRC16 == mReceiveMsgBuf.crc16){
-                // Verified success
-                bMessageOK = true; // Received a correct message.
-            }
+            mReceiveMsgBuf.len - MESSAGE_CRC_LEN,
+            MESSAGE_CRC_LEN);
+
+        //Success receive data information and check the message
+        rvCRC16 = crc16_cal(recvRawBuff, mReceiveMsgBuf.len - MESSAGE_CRC_LEN);
+        if (rvCRC16 == mReceiveMsgBuf.crc16){
+            // Verified success
+            bMessageOK = true; // Received a correct message.
         }
         return &mReceiveMsgBuf;
 
@@ -504,27 +363,14 @@ message_t* __fastcall WorkThread::onReceiveMessage()
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::fillMessageStruct(message_t& msg)
 {
-    //Head
-    msg.head = TextToUINT16(mParam.HeadHex);
-    //Len
-    msg.len = msg.clen + MESSAGE_LEN_EXCEPT_CONTENT;
-    // file timestamp
-    SYSTEMTIME systm;
-    GetLocalTime(&systm);
-    msg.timestamp.year = systm.wYear;
-    msg.timestamp.mon  = systm.wMonth;
-    msg.timestamp.day  = systm.wDay;
-    msg.timestamp.hour = systm.wHour;
-    msg.timestamp.min  = systm.wMinute;
-    msg.timestamp.second = systm.wSecond;
-    msg.timestamp.millisec = systm.wMilliseconds;
-    
-    //Tail
-    msg.tail = TextToUINT16(mParam.TailHex);
-}
-void __fastcall WorkThread::resetParameter(const WorkParameter& param)
-{
-    mParam = param;
+    if (msgStatus == MESSAGE_SEND_MESSAGE)
+    {
+        CREATE_MESSAGE(msg, mpDevCfg->head, mpDevCfg->tag,
+            sendSeq, mpDevCfg->message);
+    }else{
+        CREATE_MESSAGE(msg, mpDevCfg->head, mpDevCfg->tag,
+            sendSeq, mpDevCfg->eofMessage);
+    }
 }
 
 bool __fastcall WorkThread::getReconnect()
