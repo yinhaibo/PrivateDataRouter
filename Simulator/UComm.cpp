@@ -7,16 +7,17 @@
 
 //---------------------------------------------------------------------------
 #include <SysUtils.hpp>
+#include <Dialogs.hpp>
 #pragma package(smart_init)
 //---------------------------------------------------------------------------
 static AnsiString SERIAL_WORK_MODE = "Serial port";
-static AnsiString TCP_CLIENT_WORK_MODE = "TCP Client";
+static AnsiString TCP_CLIENT_MODE = "TCP Client";
 
 WorkMode GetModeFromStr(AnsiString modeStr)
 {
     if (modeStr == SERIAL_WORK_MODE){
         return WORK_MODE_SERIAL;
-    }else if (modeStr == TCP_CLIENT_WORK_MODE){
+    }else if (modeStr == TCP_CLIENT_MODE){
         return WORK_MODE_TCP_CLIENT;
     }
     return WORK_MODE_SERIAL;
@@ -26,8 +27,8 @@ AnsiString GetModeStr(WorkMode mode)
 {
     switch(mode){
     case WORK_MODE_SERIAL: return SERIAL_WORK_MODE;
-    case WORK_MODE_TCP_CLIENT: return TCP_CLIENT_WORK_MODE;
-    default: return SERIAL_WORK_MODE;
+    case WORK_MODE_TCP_CLIENT: return TCP_CLIENT_MODE;
+    default: return WORK_MODE_TCP_CLIENT;
     }
 }
 
@@ -47,6 +48,10 @@ void GetSerialConfigFromStr(const AnsiString& confStr,
         if (configure[i] == ','){
             switch(seg){
             case 1: //Port
+                if(i >= 7){
+                    ShowMessage("Error Serial Configure." + confStr);
+                    break;
+                }
                 strncpy(portName, configure, i);
                 break;
             case 2: // baud
@@ -76,6 +81,30 @@ void GetTCPClientConfigFromStr(const AnsiString& configure,
     if (splitpos > 0){
         ip = configure.SubString(1, splitpos - 1);
         port = StrToInt(configure.SubString(splitpos+1, configure.Length()));
+    }
+}
+
+AnsiString GetDistributionDesc(error_mode_t distri)
+{
+    switch(distri){
+    case UNIFORM_DISTRIBUTION:
+        return "Uniform";
+    case POISSON_DISTRIBUTION:
+        return "Poisson";
+    case NO_ERROR_DISTRIBUTION:
+    default:
+        return "No Error";
+    }
+}
+
+error_mode_t GetDistributionFromDesc(AnsiString desc)
+{
+    if (desc == "Uniform"){
+        return UNIFORM_DISTRIBUTION;
+    }else if(desc == "Poisson"){
+        return POISSON_DISTRIBUTION;
+    }else{
+        return NO_ERROR_DISTRIBUTION;
     }
 }
 

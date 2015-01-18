@@ -4,7 +4,7 @@
   <MACROS>
     <VERSION value="BCB.06.00"/>
     <PROJECT value="Project1.exe"/>
-    <OBJFILES value="Project1.obj Unit1.obj"/>
+    <OBJFILES value="Project1.obj Unit1.obj ..\comm\UAlgorithm.obj"/>
     <RESFILES value="Project1.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
@@ -20,7 +20,7 @@
       inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
       bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
       yb_base_c6.bpi yb_comm_c6.bpi indy.bpi"/>
-    <PATHCPP value=".;"/>
+    <PATHCPP value=".;..\comm"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
@@ -30,14 +30,14 @@
     <USERDEFINES value="_DEBUG"/>
     <SYSDEFINES value="_RTLDLL;NO_STRICT;USEPACKAGES"/>
     <MAINSOURCE value="Project1.cpp"/>
-    <INCLUDEPATH value="..\..\Projects;..\Lib\VCL;$(BCB)\include;$(BCB)\include\vcl"/>
-    <LIBPATH value="&quot;C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL&quot;;..\..\Projects;..\Lib\VCL;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <INCLUDEPATH value="..\comm;..\..\Projects;..\Lib\VCL;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL&quot;;..\..\Projects;..\Lib\VCL;$(BCB)\lib\obj;$(BCB)\lib"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
   <OPTIONS>
-    <IDLCFLAGS value="-I..\..\Projects -I..\Lib\VCL -I$(BCB)\include -I$(BCB)\include\vcl 
-      -src_suffix cpp -D_DEBUG -boa"/>
+    <IDLCFLAGS value="-I..\comm -I..\..\Projects -I..\Lib\VCL -I$(BCB)\include 
+      -I$(BCB)\include\vcl -src_suffix cpp -D_DEBUG -boa"/>
     <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -c 
       -tW -tWM"/>
     <PFLAGS value="-$YD -$W -$O- -$A8 -v -JPHNE -M"/>
@@ -56,6 +56,7 @@
       <FILE FILENAME="Project1.res" FORMNAME="" UNITNAME="Project1.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="Project1.cpp" FORMNAME="" UNITNAME="Project1" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="Unit1.cpp" FORMNAME="Form1" UNITNAME="Unit1" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\comm\UAlgorithm.cpp" FORMNAME="" UNITNAME="UAlgorithm" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>

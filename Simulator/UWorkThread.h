@@ -52,6 +52,8 @@ typedef void __fastcall (__closure *TTxMsgEvent)(WorkThread* Sender,
                                                    int msgcnt);
 typedef void __fastcall (__closure *TErrMsgEvent)(WorkThread* Sender,
                                                    int msgcnt);
+typedef void __fastcall (__closure *TMsgSeqUpdateEvent)(WorkThread* Sender,
+                                                   int msgseq);
 typedef enum _recv_msg_status_t
 {
     RECV_MSG_STATUS_HEAD,    // Receive message head
@@ -72,6 +74,7 @@ private:
     TRxMsgEvent FOnRxMsg;
     TTxMsgEvent FOnTxMsg;
     TErrMsgEvent FOnErrMsg;
+    TMsgSeqUpdateEvent FOnMsgSeqUpdate;
     int FTag;
     bool FActiveMode;
 
@@ -86,13 +89,13 @@ private:
     AnsiString FName;
     long FSeed;
 
-    int sendSeq;
+    unsigned char sendSeq;
 
     message_send_status_t msgStatus; //Message status
 protected:
     // Configure
     //WorkParameter mParam;
-    const device_config_t* mpDevCfg;
+    device_config_t* mpDevCfg;
     //message_t mReqMsg;
     message_t mMessage;
     message_t mEOFMessage; 
@@ -103,7 +106,10 @@ protected:
     int receivePos;
     int sendPos;
     int mRecvLen; // Current Receive Len
-    bool hasDataRead;
+    
+    bool hasDataRead;    
+    bool isEnableWrite;
+    
     bool bMessageOK; // The status of message received
 
     //Send buffer and receive buffer 
@@ -136,13 +142,17 @@ protected:
     //Work Thread subclass need to implement send and receive functions.
     virtual int __fastcall sendData(unsigned char* pbuffer, int len) = 0;
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len) = 0;
-    
+
+    void __fastcall updateUIEvent(unsigned int& txMsgCnt,
+            unsigned int& rxMsgCnt,
+            unsigned int& errMsgCnt,
+            DWORD& lastReportTick);
 public:
     
     /*__fastcall WorkThread(const WorkParameter& param,
         const message_t* preqMsg,
         const message_t* prespMsg);*/
-    __fastcall WorkThread(const device_config_t* pDevCfg);
+    __fastcall WorkThread(device_config_t* pDevCfg);
     __fastcall void Start();
     __fastcall void Stop();
 
@@ -156,6 +166,7 @@ public:
     __property TRxMsgEvent OnRxMsg  = { read=FOnRxMsg, write=FOnRxMsg };
     __property TTxMsgEvent OnTxMsg  = { read=FOnTxMsg, write=FOnTxMsg };
     __property TErrMsgEvent OnErrMsg  = { read=FOnErrMsg, write=FOnErrMsg };
+    __property TMsgSeqUpdateEvent OnMsgSeqUpdate = {read = FOnMsgSeqUpdate, write=FOnMsgSeqUpdate};
     __property int Tag  = { read=FTag, write=FTag };
     __property bool ActiveMode  = { read=FActiveMode, write=FActiveMode };
     __property AnsiString Name  = { read=FName, write=FName };

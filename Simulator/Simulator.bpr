@@ -7,7 +7,7 @@
     <OBJFILES value="Simulator.obj UMain.obj UAbout.obj UWorkThread.obj USetting.obj UComm.obj 
       UCommDev_Setting.obj UClientWorkThread.obj SocketCfg.obj 
       ..\comm\UnitLogWriter.obj ..\comm\LogFileEx.obj USerialWorkThread.obj 
-      ..\comm\UAlgorithm.obj ..\comm\Tools.obj UIORouter.obj"/>
+      ..\comm\UAlgorithm.obj ..\comm\Tools.obj"/>
     <RESFILES value="Simulator.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
@@ -74,7 +74,6 @@
       <FILE FILENAME="USerialWorkThread.cpp" FORMNAME="" UNITNAME="USerialWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\comm\UAlgorithm.cpp" FORMNAME="" UNITNAME="UAlgorithm" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\comm\Tools.cpp" FORMNAME="" UNITNAME="Tools" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="UIORouter.cpp" FORMNAME="" UNITNAME="UIORouter" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -86,7 +85,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=0
 Release=0
-Build=9
+Build=10
 Debug=0
 PreRelease=0
 Special=0
@@ -98,7 +97,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=
 FileDescription=Data Entry Device Simulator
-FileVersion=1.0.0.9
+FileVersion=1.0.0.10
 InternalName=
 LegalCopyright=
 LegalTrademarks=

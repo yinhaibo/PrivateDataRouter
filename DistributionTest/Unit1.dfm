@@ -120,4 +120,13 @@ object Form1: TForm1
       YValues.Order = loNone
     end
   end
+  object Button2: TButton
+    Left = 336
+    Top = 144
+    Width = 145
+    Height = 25
+    Caption = 'Generate'
+    TabOrder = 5
+    OnClick = Button2Click
+  end
 end

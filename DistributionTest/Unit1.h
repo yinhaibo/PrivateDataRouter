@@ -27,9 +27,13 @@ __published:	// IDE-managed Components
     TChart *Chart1;
     TFastLineSeries *Series1;
     TFastLineSeries *Series2;
+    TButton *Button2;
     void __fastcall Button1Click(TObject *Sender);
     void __fastcall FormCreate(TObject *Sender);
+    void __fastcall Button2Click(TObject *Sender);
 private:	// User declarations
+    long FSeed;
+    int __fastcall getRandRange(int mode, int from , int to);
 public:		// User declarations
     __fastcall TForm1(TComponent* Owner);
 };

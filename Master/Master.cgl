@@ -1,87 +1,33 @@
-Error 00074. 0x300010 (Thread 0x0FEC):
-Resource leak: The memory block (0xFB4B40) was never freed
-
-The memory block (0x00FB4B40) [size: 36 bytes] was allocated with SysGetMem
-Call Tree:
-   0x0045D073(=Master.exe:0x01:05C073) system.pas#2450
-   0x00461F62(=Master.exe:0x01:060F62) WinHelpViewer.pas#655
-   0x3267D929(=CC3260MT.DLL:0x01:07C929)
-   0x3267DAFF(=CC3260MT.DLL:0x01:07CAFF)
-
-------------------------------------------
 Functions called:
- sprintf (4 times)
- atof (2 times)
- atoi (6 times)
- strncpy (2 times)
- snprintf (15 times)
+ fflush (4 times)
+ free (7 times)
+ delete (14 times)
+ vsnprintf (2 times)
  strcat (3 times)
- strcmp (15 times)
- strftime (30 times)
- localtime (30 times)
- time (30 times)
- memset (9 times)
+ strcmp (7 times)
+ snprintf (14 times)
+ new (15 times)
+ memset (6 times)
  strcpy (4 times)
- strlen (18 times)
+ delete[] (4 times)
+ new[] (4 times)
  atol (1 times)
- SysReallocMem (76 times)
- SysFreeMem (2362 times)
- SysGetMem (2363 times)
+ SysReallocMem (59 times)
+ SysFreeMem (1658 times)
+ SysGetMem (1660 times)
  lstrlenA (1 times)
  lstrcpynA (4 times)
- realloc (5 times)
- memcpy (1 times)
- delete (56 times)
- delete[] (16 times)
- free (39 times)
- new[] (28 times)
- new (66 times)
- calloc (5 times)
- malloc (41 times)
+ calloc (1 times)
+ strlen (107 times)
+ realloc (1 times)
+ strdup (1 times)
+ malloc (4 times)
+ memcpy (3 times)
 Resource types used:
- object array (28 allocs, 26 max)
- object (66 allocs, 50 max)
- memory block (2414 allocs, 868 max)
+ object (15 allocs, 15 max)
+ object array (4 allocs, 3 max)
+ memory block (1667 allocs, 721 max)
 Modules used:
- 00400000 10/21/2014 20:07:52
- F:\Projects\IORouter\sourcecode\Master\Master.exe
- 00540000 02/02/2002 00:00:00 C:\PROGRA~1\Borland\CBUILD~1\Bin\STLPMT45.DLL
- 01110000 01/07/2009 18:20:36 C:\WINDOWS\system32\Normaliz.dll
- 01190000 02/02/2002 00:00:00 C:\PROGRA~1\Borland\CBUILD~1\Bin\BORLNDMM.DLL
- 0CD00000 02/02/2002 00:00:00 C:\PROGRA~1\Borland\CBUILD~1\Bin\CG32.DLL
- 32600000 02/02/2002 00:00:00 C:\PROGRA~1\Borland\CBUILD~1\Bin\CC3260MT.DLL
- 3E410000 03/07/2014 01:58:50 C:\WINDOWS\system32\WININET.dll
- 3EAB0000 03/07/2014 01:58:50 C:\WINDOWS\system32\iertutil.dll
- 43CE0000 03/07/2014 01:58:50 C:\WINDOWS\system32\urlmon.dll
- 5ADC0000 02/11/2011 00:31:12 C:\WINDOWS\system32\uxtheme.dll
- 5D170000 02/11/2011 00:28:28 C:\WINDOWS\system32\COMCTL32.DLL
- 5FDD0000 07/06/2012 21:58:54 C:\WINDOWS\system32\NETAPI32.dll
- 62C20000 04/15/2008 04:00:00 C:\WINDOWS\system32\LPK.DLL
- 70200000 09/18/2014 17:44:06 C:\Program
- Files\360\360safe\safemon\safemon.dll
- 71A10000 04/15/2008 04:00:00 C:\WINDOWS\system32\WS2HELP.dll
- 71A20000 04/15/2008 04:00:00 C:\WINDOWS\system32\WS2_32.dll
- 71A40000 04/15/2008 04:00:00 C:\WINDOWS\system32\WSOCK32.DLL
- 73640000 02/11/2011 00:28:44 C:\WINDOWS\system32\msctfime.ime
- 73FA0000 07/10/2013 18:37:54 C:\WINDOWS\system32\USP10.dll
- 74680000 04/15/2008 04:00:00 C:\WINDOWS\system32\MSCTF.dll
- 76300000 04/15/2008 04:00:00 C:\WINDOWS\system32\IMM32.DLL
- 76750000 04/15/2008 04:00:00 C:\WINDOWS\system32\SHFOLDER.DLL
- 76990000 08/05/2013 21:30:32 C:\WINDOWS\system32\OLE32.DLL
- 76BC0000 04/15/2008 04:00:00 C:\WINDOWS\system32\PSAPI.DLL
- 770F0000 01/26/2013 11:55:46 C:\WINDOWS\system32\OLEAUT32.DLL
- 77180000 02/11/2011 00:28:24
- C:\WINDOWS\WinSxS\x86_Microsoft.Windows.Common-Controls_6595b64144ccf1df_6.0.
-2600.6028_x-ww_61e65202\comctl32.dll
- 77BD0000 04/15/2008 04:00:00 C:\WINDOWS\system32\VERSION.dll
- 77BE0000 04/15/2008 04:00:00 C:\WINDOWS\system32\msvcrt.dll
- 77D10000 04/15/2008 04:00:00 C:\WINDOWS\system32\user32.dll
- 77DA0000 02/11/2011 00:28:24 C:\WINDOWS\system32\advapi32.dll
- 77E50000 11/07/2013 13:38:52 C:\WINDOWS\system32\RPCRT4.dll
- 77EF0000 10/09/2013 21:12:40 C:\WINDOWS\system32\GDI32.dll
- 77F40000 02/11/2011 00:29:14 C:\WINDOWS\system32\SHLWAPI.dll
- 77FC0000 02/11/2011 00:29:04 C:\WINDOWS\system32\Secur32.dll
- 7C800000 02/11/2011 00:28:34 C:\WINDOWS\system32\kernel32.dll
- 7C920000 12/10/2010 07:15:52 C:\WINDOWS\system32\ntdll.dll
- 7D590000 06/08/2012 22:24:28 C:\WINDOWS\system32\SHELL32.DLL
+ 00400000 01/18/2015 14:55:20
+ D:\Projects\GitHub\PrivateDataRouter\Master\Master.exe
 ==========================================

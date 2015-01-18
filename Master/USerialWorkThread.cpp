@@ -23,11 +23,15 @@
 //      }
 //---------------------------------------------------------------------------
 
-__fastcall SerialWorkThread::SerialWorkThread(
-    WorkParameter& param)
-    : WorkThread(param)
+__fastcall SerialWorkThread::SerialWorkThread(const device_config_t* pDevCfg,
+            IQueue* masterQueue, const AnsiString& name)
+    : WorkThread(pDevCfg, masterQueue, name)
 {
     receivePos = 0; //Rest receive position to zero
+}
+//---------------------------------------------------------------------------
+void __fastcall SerialWorkThread::onInit()
+{
     initParameters();
 }
 //---------------------------------------------------------------------------
@@ -41,6 +45,7 @@ void __fastcall SerialWorkThread::onStart()
         if (OnServerOpen != NULL){
             OnServerOpen(this, true);
         }
+        isConnected = true;
     }catch(...){
         if (FOnOpenChannel != NULL){
             FOnOpenChannel(this, false);
@@ -48,12 +53,14 @@ void __fastcall SerialWorkThread::onStart()
         if (OnServerOpen != NULL){
             OnServerOpen(this, false);
         }
+        isConnected = false;
     }
 }
 //---------------------------------------------------------------------------
 void __fastcall SerialWorkThread::onStop()
 {
     mDevice->Active = false;
+    isConnected = false;
 }
 //---------------------------------------------------------------------------
 void __fastcall SerialWorkThread::onParameterChange()
@@ -62,23 +69,50 @@ void __fastcall SerialWorkThread::onParameterChange()
     initParameters();
 }
 //---------------------------------------------------------------------------
-void __fastcall SerialWorkThread::onSendMessage(RawMsg& msg)
+// Do send message
+int __fastcall SerialWorkThread::sendData(unsigned char* pbuffer, int len)
 {
     if(mDevice->Active){
-        mDevice->Write(msg.message, 5);
+        try{
+            int sendLen = 0;
+            while(sendLen < len){
+                sendLen = mDevice->Write(pbuffer + sendPos,
+                    len - sendPos);
+                if (sendLen > 0){
+                    sendPos += sendLen;
+                }
+            }
+            return len;
+        }catch(...){
+            LogMsg("Serial port error in COM" + IntToStr(mDevice->PortNo));
+            //socketErrorProcess();
+            return -1;
+        }
+    }else{
+        return 0;
     }
 }
-RawMsg* __fastcall SerialWorkThread::onReceiveMessage()
+//---------------------------------------------------------------------------
+// Do receive message
+int __fastcall SerialWorkThread::receiveData(unsigned char* pbuffer, int len)
 {
-    if(mDevice->Active){
-        long rdlen = mDevice->Read(mReceiveMsgBuf.message + receivePos,
-            MESSAGE_LEN - receivePos);
-        receivePos += rdlen;
-        if (receivePos == MESSAGE_LEN){
-            receivePos = 0;
-            return &mReceiveMsgBuf;
-        }else return NULL;
-    }else return NULL;
+    if(!mDevice->Active){
+        return -1;
+    }
+    long rdlen = mDevice->Read(pbuffer + receivePos,
+            len - receivePos);
+    //LogMsg("Received :" + IntToStr(rdlen));
+    if (rdlen == -1){
+        // No data to read
+        receivePos = 0;
+        hasDataRead = false;
+        return -1;
+    }
+    receivePos += rdlen;
+    if (receivePos == len){
+        receivePos = 0;
+        return len;
+    }else return receivePos;
 }
 //---------------------------------------------------------------------------
 //init parameters
@@ -89,7 +123,7 @@ void SerialWorkThread::initParameters()
     char parity;
     int databits;
     float stopbits;
-    GetSerialConfigFromStr(mParam.Configure, portidx, baud, parity, databits, stopbits);
+    GetSerialConfigFromStr(mpDevCfg->configure, portidx, baud, parity, databits, stopbits);
 
     if (mDevice == NULL){
         // Create Serial component

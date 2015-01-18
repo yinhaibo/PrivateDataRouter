@@ -79,6 +79,30 @@ void GetTCPClientConfigFromStr(const AnsiString& configure,
     }
 }
 
+AnsiString GetDistributionDesc(error_mode_t distri)
+{
+    switch(distri){
+    case UNIFORM_DISTRIBUTION:
+        return "Uniform";
+    case POISSON_DISTRIBUTION:
+        return "Poisson";
+    case NO_ERROR_DISTRIBUTION:
+    default:
+        return "No Error";
+    }
+}
+
+error_mode_t GetDistributionFromDesc(AnsiString desc)
+{
+    if (desc == "Uniform"){
+        return UNIFORM_DISTRIBUTION;
+    }else if(desc == "Poisson"){
+        return POISSON_DISTRIBUTION;
+    }else{
+        return NO_ERROR_DISTRIBUTION;
+    }
+}
+
 UINT8 HexToInt8(char hex)
 {
         if (hex >= 'a' && hex <= 'f'){

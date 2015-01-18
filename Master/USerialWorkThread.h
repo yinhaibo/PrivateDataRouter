@@ -12,8 +12,6 @@ class SerialWorkThread : public WorkThread
 {
 private:
     TYbCommDevice* mDevice;
-    RawMsg mReceiveMsgBuf;
-    int receivePos;
 
     void initParameters();
 
@@ -21,13 +19,16 @@ private:
     TYbCommDevice::TParity __fastcall transParity(char parity);
     TYbCommDevice::TStopBits __fastcall transStopBits(float stopbits);
 protected:
-    virtual void __fastcall onSendMessage(RawMsg& msg);
-    virtual RawMsg* __fastcall onReceiveMessage();
+    virtual void __fastcall onInit();
     virtual void __fastcall onStart();
     virtual void __fastcall onStop();
     virtual void __fastcall onParameterChange();
+
+    virtual int __fastcall sendData(unsigned char* pbuffer, int len);
+    virtual int __fastcall receiveData(unsigned char* pbuffer, int len);
 public:
-    __fastcall SerialWorkThread(WorkParameter& param);
+    __fastcall SerialWorkThread(const device_config_t* pDevCfg,
+            IQueue* masterQueue, const AnsiString& name);
     virtual __fastcall ~SerialWorkThread();
 };
 //---------------------------------------------------------------------------

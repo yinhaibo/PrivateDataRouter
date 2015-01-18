@@ -4,44 +4,51 @@
 #pragma hdrstop
 
 #include "UServerWorkThread.h"
-
+#include "LogFileEx.h"
 //---------------------------------------------------------------------------
 
 #pragma package(smart_init)
-
+extern LogFileEx logger;
 //---------------------------------------------------------------------------
-ServerWorkThread::ServerWorkThread(WorkParameter& param)
-    : WorkThread(param)
+ServerWorkThread::ServerWorkThread(const device_config_t* pDevCfg,
+            IQueue* masterQueue, const AnsiString& name)
+    : WorkThread(pDevCfg, masterQueue, name)
 {
     mServer = NULL;
-    mClient = NULL;
     receivePos = 0; //Rest receive position to zero
     hasDataRead = false;
+    currSocketThread = NULL;
+
+    csBuffer = new TCriticalSection();
+    loopbuff_init(&lpbufRx, ucBufRx, LOOPBUFF_MAX_LEN);
+    loopbuff_init(&lpbufTx, ucBufTx, LOOPBUFF_MAX_LEN);
+}
+//---------------------------------------------------------------------------
+void __fastcall ServerWorkThread::onInit()
+{
     initParameters();
 }
 //---------------------------------------------------------------------------
+// User start current thread
 void __fastcall ServerWorkThread::onStart()
 {
     LogMsg("Start Event");
-    if (!mServer->Active){
-        if (mClient != NULL){
-            mClient->Close();
-            mClient = NULL;
-            hasDataRead = false;
+    if (mServer->Active){
+        // Wait a new connection
+    }else{
+        try{
+            mServer->Active = true;
+        }catch(Exception& e){
+            LogMsg(FName + " create failured. Detail:" + e.Message);
         }
-        mServer->Active = true;
     }
 }
 //---------------------------------------------------------------------------
+// User stop current thread
 void __fastcall ServerWorkThread::onStop()
 {
     LogMsg("Stop Event");
     if (mServer->Active){
-        if (mClient != NULL){
-            mClient->Close();
-            mClient = NULL;
-            hasDataRead = false;
-        }
         mServer->Active = false;
     }
 }
@@ -52,29 +59,38 @@ void __fastcall ServerWorkThread::onParameterChange()
     initParameters();
 }
 //---------------------------------------------------------------------------
-void __fastcall ServerWorkThread::onSendMessage(RawMsg& msg)
+// Do send message
+int __fastcall ServerWorkThread::sendData(unsigned char* pbuffer, int len)
 {
-    if(mServer->Active && mClient != NULL){
-        mClient->SendBuf(msg.message, 5);
-    }
-}
-RawMsg* __fastcall ServerWorkThread::onReceiveMessage()
-{
-    if(mServer->Active && mClient != NULL/* && hasDataRead*/){
-        long rdlen = mClient->ReceiveBuf(mReceiveMsgBuf.message + receivePos,
-            MESSAGE_LEN - receivePos);
-        if (rdlen == -1){
-            // No data to read
-            hasDataRead = false;
-            receivePos = 0; // Reset receive position, will drop some bytes.
-            return NULL;
+    int iWriteBytes = 0;
+    while(iWriteBytes < len){
+        try{
+            csBuffer->Enter();
+            while(!loopbuff_isfull(&lpbufTx) && iWriteBytes < len){
+                loopbuff_push(&lpbufTx, pbuffer[iWriteBytes++]);
+            }
+        }__finally{
+            csBuffer->Leave();
         }
-        receivePos += rdlen;
-        if (receivePos == MESSAGE_LEN){
-            receivePos = 0;
-            return &mReceiveMsgBuf;
-        }else return NULL;
-    }else return NULL;
+        Sleep(10);
+    }
+    return iWriteBytes;
+}
+// Do receive message
+int __fastcall ServerWorkThread::receiveData(unsigned char* pbuffer, int len)
+{
+    int iReadBytes = 0;
+    try{
+        csBuffer->Enter();
+        if (loopbuff_getlen(&lpbufRx, 0) >= (unsigned int)len){
+            while(iReadBytes < len){
+                pbuffer[iReadBytes++] = loopbuff_pull(&lpbufRx);
+            }
+        }
+    }__finally{
+        csBuffer->Leave();
+    }
+    return iReadBytes;
 }
 //---------------------------------------------------------------------------
 //init parameters
@@ -83,13 +99,16 @@ void ServerWorkThread::initParameters()
     if (mServer == NULL){
         mServer = new TServerSocket(NULL);
     }
-    mServer->Port = StrToInt(mParam.Configure);
-    mServer->ServerType = stNonBlocking;
+    mServer->Port = StrToInt(mpDevCfg->configure);
+    mServer->ThreadCacheSize = 0; //No threads need to cache[Only one client allow]
+    mServer->ServerType = stThreadBlocking;
+    mServer->OnGetThread = onGetThread;
     mServer->OnClientConnect = onSocketConnect;
     mServer->OnClientDisconnect = onSocketDisconnect;
     mServer->OnClientRead = onSocketRead;
     mServer->OnClientError = onSocketError;
     mServer->OnListen = onServerListen;
+    mServer->OnAccept = onServerAccept;
 }
 __fastcall ServerWorkThread::~ServerWorkThread()
 {
@@ -98,32 +117,42 @@ __fastcall ServerWorkThread::~ServerWorkThread()
     }
 }
 //---------------------------------------------------------------------------
+// Client has connected, and need to create a new client work thread
+void __fastcall ServerWorkThread::onGetThread(TObject *Sender,
+        TServerClientWinSocket *ClientSocket,
+        TServerClientThread *&SocketThread)
+{
+    LogMsg("onGetThread");
+    SocketThread = currSocketThread = new ClientWorkThread(ClientSocket,
+        &lpbufRx, &lpbufTx, csBuffer);
+}
+//---------------------------------------------------------------------------
+// Client starting to build a new client
 void __fastcall ServerWorkThread::onSocketConnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
-    LogMsg("Socket connected:" + Socket->RemoteAddress + "Handle:" + IntToStr(Socket->Handle));
-    if (mClient != NULL){
-        mClient->Close(); // close prev connection
-    }
-    mClient = Socket;
+    LogMsg("Socket connected:" + Socket->RemoteAddress + ", RemotePort:"
+        + IntToStr(Socket->RemotePort));
+    isConnected = true;
     if (FOnOpenChannel != NULL){
         FOnOpenChannel(this, true);
     }
-    mIsRunning = true;
+    FStatus = WORK_STATUS_WORKING;
 }
 void __fastcall ServerWorkThread::onSocketDisconnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
-    LogMsg("Socket disconnected:" + IntToStr(Socket->Handle));
-    if (mServer != NULL){
-        if (mClient == Socket){
-            mClient = NULL;
-        }
+    // This function will be called by ClientWorkThread
+    // So, We just can record the status, do not change any Objects
+    LogMsg("Socket disconnected:" + IntToStr(Socket->RemotePort));
+    isConnected = false;
+    if (mServer != NULL && mServer->Active){
         if (FOnCloseChannel != NULL){
             FOnCloseChannel(this, true);
         }
+        currSocketThread = NULL;
+        FStatus = WORK_STATUS_CLOSE_WORKING; // Wait for another client
     }
-    mIsRunning = false;
 }
 void __fastcall ServerWorkThread::onSocketRead(System::TObject* Sender,
     TCustomWinSocket* Socket)
@@ -136,12 +165,12 @@ void __fastcall ServerWorkThread::onSocketRead(System::TObject* Sender,
 void __fastcall ServerWorkThread::onSocketError(System::TObject* Sender,
     TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode)
 {
-    LogMsg("Socket error:" + IntToStr(Socket->Handle));
+    LogMsg("Socket error:" + IntToStr(Socket->RemotePort));
     if (mServer != NULL){
-        Socket->Close();
-        if (mClient == Socket){
-            mClient = NULL;
-        }
+        //currSocketThread->Terminate();
+        //currSocketThread->WaitFor();
+        //delete currSocketThread;
+        CloseClientConnection();
         if (FOnCloseChannel != NULL){
             FOnCloseChannel(this, true);
         }
@@ -153,7 +182,33 @@ void __fastcall ServerWorkThread::onServerListen(TObject *Sender, TCustomWinSock
     if (OnServerOpen != NULL){
         OnServerOpen(this, true);
     }
-    mIsRunning = true;
+    //FStatus = WORK_STATUS_WORKING;
+    LogMsg("Starting to listen");
+}
+void __fastcall ServerWorkThread::onServerAccept(TObject *Sender, TCustomWinSocket *Socket)
+{
+    LogMsg("Starting to accept a new connection.");
+    CloseClientConnection();
+}
+
+
+void ServerWorkThread::CloseClientConnection()
+{
+    if (currSocketThread != NULL
+        && currSocketThread->ClientSocket != NULL
+        && currSocketThread->ClientSocket->Connected){
+
+        try{
+            //currSocketThread->ClientSocket->Lock();
+            currSocketThread->ClientSocket->Close();
+        }__finally{
+            //currSocketThread->ClientSocket->Unlock();
+        }
+        //currSocketThread->WaitFor();
+        currSocketThread = NULL;
+    }
 }
 //---------------------------------------------------------------------------
+
+
 

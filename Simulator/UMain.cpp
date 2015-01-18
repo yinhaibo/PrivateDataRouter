@@ -23,18 +23,19 @@ LogFileEx logger;
 //---------------------------------------------------------------------------
 #define COL_IDX_SEQ             0
 #define COL_IDX_ALIAS           1
-#define COL_IDX_TAG             2
-#define COL_IDX_MODE            3
-#define COL_IDX_CONFIG          4
-#define COL_IDX_DELAY_FROM      5
-#define COL_IDX_DELAY_TO        6
-#define COL_IDX_RX              7
-#define COL_IDX_TX              8
-#define COL_IDX_ERROR           9
-#define COL_IDX_MESSAGE        10
-#define COL_IDX_EOFMSG         11
-#define COL_IDX_OPERATION      12
-#define COL_IDX_MAX            13
+#define COL_IDX_MODE            2
+#define COL_IDX_CONFIG          3
+#define COL_IDX_DELAY_FROM      4
+#define COL_IDX_DELAY_TO        5
+#define COL_IDX_TAG             6
+#define COL_IDX_MESSAGE         7
+#define COL_IDX_EOFMSG          8
+#define COL_IDX_TX              9
+#define COL_IDX_RX             10
+#define COL_IDX_ERROR          11
+#define COL_IDX_MSGSEQ         12
+#define COL_IDX_OPERATION      13
+#define COL_IDX_MAX            14
 
 __fastcall TFMain::TFMain(TComponent* Owner)
         : TForm(Owner)
@@ -74,6 +75,7 @@ void __fastcall TFMain::CreateUI()
     gridDevices->Cells[COL_IDX_ERROR][0] = "Err(Msg)";
     gridDevices->Cells[COL_IDX_MESSAGE][0] = "Message";
     gridDevices->Cells[COL_IDX_EOFMSG][0] = "EOF Message";
+    gridDevices->Cells[COL_IDX_MSGSEQ][0] = "Message Seq";
 
     gridDevices->ColWidths[COL_IDX_SEQ] = 30;
     gridDevices->ColWidths[COL_IDX_ALIAS] = 30;
@@ -84,6 +86,7 @@ void __fastcall TFMain::CreateUI()
     gridDevices->ColWidths[COL_IDX_DELAY_TO] = 60;
     gridDevices->ColWidths[COL_IDX_RX] = 50;
     gridDevices->ColWidths[COL_IDX_TX] = 50;
+    gridDevices->ColWidths[COL_IDX_MSGSEQ] = 80;
     gridDevices->ColWidths[COL_IDX_OPERATION] = 80;
     gridDevices->ColWidths[COL_IDX_ERROR] = 50;
     gridDevices->ColWidths[COL_IDX_MESSAGE] = 80;
@@ -100,10 +103,10 @@ WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
 
     // Building a new parameter
 
-    if (iSeq > 0 && iSeq < (int)lstDeviceConfig.size()){
-        list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
-        advance(cit, iSeq - 1); // Move ahead iSeq element
-        const device_config_t* pDevCfg = *cit;
+    if (iSeq > 0 && iSeq <= (int)lstDeviceConfig.size()){
+        list<device_config_t*>::iterator it = lstDeviceConfig.begin();
+        advance(it, iSeq - 1); // Move ahead iSeq element
+        device_config_t* pDevCfg = *it;
         WorkThread* thread;
         if (pDevCfg->mode == WORK_MODE_SERIAL){
             // create a new work thread
@@ -127,6 +130,7 @@ WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
         thread->OnRxMsg = onRxMsg;
         thread->OnTxMsg = onTxMsg;
         thread->OnErrMsg = onErrMsg;
+        thread->OnMsgSeqUpdate = onMsgSeqUpdate;
         thread->ActiveMode = chkActiveMode->Checked;
         return thread;
     }else{
@@ -177,9 +181,9 @@ void TFMain::ReloadConfigure()
     ini = new TIniFile( ChangeFileExt(Application->ExeName, ".INI" ) );
     
     // Load main configure
-    AnsiString name = ini->ReadString("head", "Name", "");
-    if (name.Length() > 0){
-        this->Caption = "Device Simulator - " + name;
+    FName = ini->ReadString("head", "Name", "");
+    if (FName.Length() > 0){
+        this->Caption = "Device Simulator - " + FName;
     }
     int devicecnt = ini->ReadInteger("head", "DeviceCount", 0);
     chkActiveMode->Checked = ini->ReadBool("head", "Active", false);
@@ -260,6 +264,44 @@ void __fastcall TFMain::ReInitAllDeviceConfigure()
     }
 }
 
+void TFMain::SaveConfigure()
+{
+    // Save All Item list in UI
+    // Using INI file to save item(User Definied)
+    TIniFile *ini;
+    ini = new TIniFile( ChangeFileExt(Application->ExeName, ".INI" ) );
+    int devicecnt = ini->ReadInteger("head", "DeviceCount", 0);
+    if (devicecnt > 0){
+        // Clear old data
+        for (int i = 1; i <= devicecnt; i++){
+            ini->EraseSection("Device" + IntToStr(i));
+        }
+    }
+    
+    devicecnt = gridDevices->RowCount - 1;
+    ini->WriteInteger("head", "DeviceCount", devicecnt);
+    ini->WriteBool("head", "Active", chkActiveMode->Checked);
+    ini->WriteBool("head", "AutoReconnect", chkAutoReconn->Checked);
+
+    String sectionName;
+    int iSeq;
+    list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+    for(; cit != lstDeviceConfig.end(); ++cit){
+        const device_config_t* pDevCfg = *cit;
+        sectionName = "Device" + IntToStr(pDevCfg->seq);
+        ini->WriteString(sectionName, "Alias", pDevCfg->alias);
+        ini->WriteString(sectionName, "Mode", GetModeStr(pDevCfg->mode));
+        ini->WriteString(sectionName, "Configure", pDevCfg->configure);
+        ini->WriteInteger(sectionName, "DelayFrom", pDevCfg->delayFrom);
+        ini->WriteInteger(sectionName, "DelayTo", pDevCfg->delayTo);
+        ini->WriteString(sectionName, "Head", pDevCfg->head);
+        ini->WriteInteger(sectionName, "Tag", pDevCfg->tag);
+        ini->WriteString(sectionName, "Message", pDevCfg->message);
+        ini->WriteString(sectionName, "EOFMessage", pDevCfg->eofMessage);
+    }
+    delete ini;
+}
+
 void __fastcall TFMain::UpdateUI()
 {
     list<device_config_t*>::const_iterator it;
@@ -291,35 +333,6 @@ void __fastcall TFMain::UpdateUI()
         gridDevices->Cells[COL_IDX_SEQ][row] = pDevCfg->seq;
         row++;
     }
-}
-void TFMain::SaveConfigure()
-{
-    // Save All Item list in UI
-    // Using INI file to save item(User Definied)
-    TIniFile *ini;
-    ini = new TIniFile( ChangeFileExt(Application->ExeName, ".INI" ) );
-    int devicecnt = ini->ReadInteger("head", "DeviceCount", 0);
-    if (devicecnt > 0){
-        // Clear old data
-        for (int i = 0; i < devicecnt; i++){
-            ini->EraseSection("Device" + IntToStr(i));
-        }
-    }
-    
-    devicecnt = gridDevices->RowCount - 1;
-    ini->WriteInteger("head", "DeviceCount", devicecnt);
-    ini->WriteBool("head", "Active", chkActiveMode->Checked);
-    
-    String sectionName;
-    for (int i = 1; i <= devicecnt; i++){
-        sectionName = "Device" + IntToStr(i);
-        ini->WriteString(sectionName, "Alias", gridDevices->Cells[COL_IDX_ALIAS][i]);
-        ini->WriteString(sectionName, "Mode", gridDevices->Cells[COL_IDX_MODE][i]);
-        ini->WriteString(sectionName, "Configure", gridDevices->Cells[COL_IDX_CONFIG][i]);
-        ini->WriteString(sectionName, "DelayFrom", gridDevices->Cells[COL_IDX_DELAY_FROM][i]);
-        ini->WriteString(sectionName, "DelayTo", gridDevices->Cells[COL_IDX_DELAY_TO][i]);
-    }
-    delete ini;
 }
 //---------------------------------------------------------------------------
 // Start and stop all threads.
@@ -449,8 +462,14 @@ void __fastcall TFMain::onTxMsg(WorkThread* Sender, int msgcnt)
 void __fastcall TFMain::onErrMsg(WorkThread* Sender, int msgcnt)
 {
     int rowidx = Sender->Tag;
-    
+
     PostMessage(Handle, WM_UPDATE_ERR_MSG_CNT, rowidx, msgcnt);
+}
+void __fastcall TFMain::onMsgSeqUpdate(WorkThread* Sender, int msgcnt)
+{
+    int rowidx = Sender->Tag;
+
+    PostMessage(Handle, WM_UPDATE_MSG_SEQ, rowidx, msgcnt);
 }
 void __fastcall TFMain::UpdateOpenStatus(TMessage* Msg)
 {
@@ -508,6 +527,7 @@ void __fastcall TFMain::UpdateTxMsgCnt(TMessage* Msg)
     int msgcnt = StrToInt(gridDevices->Cells[COL_IDX_TX][rowidx]);
     msgcnt += Msg->LParam;
     gridDevices->Cells[COL_IDX_TX][rowidx] = IntToStr(msgcnt);
+    
 }
 void __fastcall TFMain::UpdateErrMsgCnt(TMessage* Msg)
 {
@@ -515,6 +535,11 @@ void __fastcall TFMain::UpdateErrMsgCnt(TMessage* Msg)
     int msgcnt = StrToInt(gridDevices->Cells[COL_IDX_ERROR][rowidx]);
     msgcnt += Msg->LParam;
     gridDevices->Cells[COL_IDX_ERROR][rowidx] = IntToStr(msgcnt);
+}
+void __fastcall TFMain::UpdateMsgSeq(TMessage* Msg)
+{
+    unsigned int rowidx = Msg->WParam;
+    gridDevices->Cells[COL_IDX_MSGSEQ][rowidx] = IntToStr(Msg->LParam);
 }
 //---------------------------------------------------------------------------
 // Show operation button in correct row
@@ -607,6 +632,7 @@ void __fastcall TFMain::FormClose(TObject *Sender, TCloseAction &Action)
     TerminateAllThread();
     palPrompt->Visible = false;
 
+    SaveSimulateResult();
     //Clear data
     list<device_config_t*>::iterator it;
     for (it = lstDeviceConfig.begin();
@@ -926,9 +952,74 @@ void __fastcall TFMain::Dispatch(void *Message)
     case WM_UPDATE_ERR_MSG_CNT:
         UpdateErrMsgCnt((TMessage*)Message);
         break;
+    case WM_UPDATE_MSG_SEQ:
+        UpdateMsgSeq((TMessage*)Message);
+        break;
     default:
         TForm::Dispatch(Message);
         break;
     }
 }
+//---------------------------------------------------------------------------
+void __fastcall TFMain::SaveSimulateResult()
+{
+    txtResult->Lines->Clear();
+    AnsiString result;
+    char formatBuf[512];
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%10s %10s %10s %10s %10s %26s %26s\r\n",
+        "","","","","",
+        "   Response Time(ms)  ",
+        "   Re-send Count      ");
+    result = formatBuf;
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%10s %10s %10s %10s %10s %8s %8s %8s %8s %8s %8s\r\n",
+        " Device ",
+        " Message ",
+        "   Send  ",
+        " Receive ",
+        "   Error ",
+        " Min", " Max", " Avg",
+        " Min", " Max", " Avg");
+    result += formatBuf;
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%s %s %s\r\n",
+        "---------- ---------- ---------- ---------- ----------",
+        "-------- -------- -------- --------",
+        "-------- --------");
+    result += formatBuf;
+    list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+    for(; cit != lstDeviceConfig.end(); ++cit){
+        const device_config_t* pDevCfg = *cit;
+        snprintf(formatBuf, sizeof(formatBuf),
+            "%10s %10d %10d %10d %10d %8d %8d %8.2f %8d %8d %8.2f\r\n",
+            pDevCfg->alias.c_str(), pDevCfg->msgMsgSent,
+            pDevCfg->msgTxCnt, pDevCfg->msgRxCnt, pDevCfg->msgErrCnt,
+            pDevCfg->dcRespTime.min, pDevCfg->dcRespTime.max, pDevCfg->dcRespTime.avg,
+            pDevCfg->dcResendCnt.min, pDevCfg->dcResendCnt.max, pDevCfg->dcResendCnt.avg
+        );
+        result += formatBuf;
+    }
+    txtResult->Text = result;
+    txtResult->Lines->SaveToFile("Simulator" + FName + "_Result.txt");
+}
+void __fastcall TFMain::txtResultDblClick(TObject *Sender)
+{
+    txtResult->Visible = false;    
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::btnResultClick(TObject *Sender)
+{
+    SaveSimulateResult();
+    txtResult->Visible = true;
+    txtResult->BringToFront();    
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::tmrWriteResultTimer(TObject *Sender)
+{
+    SaveSimulateResult();
+}
+//---------------------------------------------------------------------------
 

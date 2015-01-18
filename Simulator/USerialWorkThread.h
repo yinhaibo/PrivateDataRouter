@@ -31,7 +31,7 @@ public:
     /*__fastcall SerialWorkThread(const WorkParameter& param,
         const message_t* preqMsg,
         const message_t* prespMsg);*/
-    __fastcall SerialWorkThread(const device_config_t* pDevCfg);
+    __fastcall SerialWorkThread(device_config_t* pDevCfg);
 };
 //---------------------------------------------------------------------------
 #endif

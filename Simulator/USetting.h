@@ -16,7 +16,6 @@
 
 #include "UComm.h"
 #include "UWorkThread.h"
-#include "UIORouter.h"
 //----------------------------------------------------------------------------
 class TDeviceSetting : public TForm
 {

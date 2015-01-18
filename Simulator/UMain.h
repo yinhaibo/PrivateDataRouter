@@ -17,7 +17,7 @@
 #include <map>
 #include <list>
 
-#include "UIORouter.h"
+#include "UComm.h"
 #include "USerialWorkThread.h"
 #include "UClientWorkThread.h"
 
@@ -29,6 +29,7 @@ using namespace std;
 #define WM_UPDATE_RX_MSG_CNT    (WM_USER + WM_USER_OFFSET + 3)
 #define WM_UPDATE_TX_MSG_CNT    (WM_USER + WM_USER_OFFSET + 4)
 #define WM_UPDATE_ERR_MSG_CNT   (WM_USER + WM_USER_OFFSET + 5)
+#define WM_UPDATE_MSG_SEQ       (WM_USER + WM_USER_OFFSET + 6)
 
 //---------------------------------------------------------------------------
 #define BUTTON_STATUS_START 0x00000000
@@ -71,6 +72,9 @@ __published:	// IDE-managed Components
     TCheckBox *chkAutoReconn;
     TBitBtn *btnResetCount;
     TTrackBar *TrackBar1;
+    TTimer *tmrWriteResult;
+    TMemo *txtResult;
+    TButton *btnResult;
     void __fastcall About1Click(TObject *Sender);
     void __fastcall btnSaveClick(TObject *Sender);
     void __fastcall gridDevicesDblClick(TObject *Sender);
@@ -90,6 +94,9 @@ __published:	// IDE-managed Components
     void __fastcall btnBatchAddClick(TObject *Sender);
     void __fastcall chkAutoReconnClick(TObject *Sender);
     void __fastcall btnResetCountClick(TObject *Sender);
+    void __fastcall txtResultDblClick(TObject *Sender);
+    void __fastcall btnResultClick(TObject *Sender);
+    void __fastcall tmrWriteResultTimer(TObject *Sender);
 private:	// User declarations
     bool configModified;
     map<int, WorkItem> mWorkItems; // Work item information, key is sequence
@@ -104,6 +111,8 @@ private:	// User declarations
     void __fastcall UpdateOperationUI();
     void __fastcall UpdateUI();
     void __fastcall ReInitAllDeviceConfigure();
+
+    AnsiString FName;
     
     // configure
     void ReloadConfigure();
@@ -117,6 +126,9 @@ private:	// User declarations
     // Edit item
     bool EditRow(int rowidx);
 
+    // Save simulate result
+    void __fastcall SaveSimulateResult();
+
 
     // Callback function from work thread
     void __fastcall onOpenChannel(WorkThread* Sender, bool opened);
@@ -124,12 +136,14 @@ private:	// User declarations
     void __fastcall onRxMsg(WorkThread* Sender, int msgcnt);
     void __fastcall onTxMsg(WorkThread* Sender, int msgcnt);
     void __fastcall onErrMsg(WorkThread* Sender, int msgcnt);
+    void __fastcall onMsgSeqUpdate(WorkThread* Sender, int msgcnt);
 
     void __fastcall UpdateOpenStatus(TMessage* Msg);
     void __fastcall UpdateCloseStatus(TMessage* Msg);
     void __fastcall UpdateRxMsgCnt(TMessage* Msg);
     void __fastcall UpdateTxMsgCnt(TMessage* Msg);
     void __fastcall UpdateErrMsgCnt(TMessage* Msg);
+    void __fastcall UpdateMsgSeq(TMessage* Msg);
 public:		// User declarations
     // Constructor
     __fastcall TFMain(TComponent* Owner);

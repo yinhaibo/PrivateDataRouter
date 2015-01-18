@@ -4,6 +4,7 @@
 #pragma hdrstop
 
 #include <IniFiles.hpp>
+#include <Classes.hpp>
 
 #include "UMain.h"
 #include "USerialWorkThread.h"
@@ -21,8 +22,10 @@ TFMain *FMain;
 #define COL_IDX_DEST         4
 #define COL_IDX_TX           5
 #define COL_IDX_RX           6
-#define COL_IDX_CLIENT        7
-#define COL_IDX_OPERATION    8
+#define COL_IDX_ERR_MODE     7
+#define COL_IDX_CLIENT       8
+#define COL_IDX_OPERATION    9
+#define COL_IDX_MAX         10
 
 LogFileEx logger;
 
@@ -32,7 +35,28 @@ __fastcall TFMain::TFMain(TComponent* Owner)
     mRxBytes = mTxBytes = 0;
     qFrontSentBytes = 0;
     
-    gridDevices->ColCount = 9;
+    CreateUI();
+
+    lstThreadObj = new TStringList();
+    csWorkVar = new TCriticalSection(); // Cretea critical section
+    
+    masterThread = new MasterWorkThread();
+    
+    ReloadConfigure();
+    if (lstDeviceConfig.size() == 0){
+        return;
+    }
+    
+    UpdateUI();
+    ReInitAllDeviceConfigure();
+    UpdateOperationUI();
+
+    logger.Log("Main thread id is :" + IntToStr(::GetCurrentThreadId()));
+}
+//---------------------------------------------------------------------------
+void __fastcall TFMain::CreateUI()
+{
+    gridDevices->ColCount = COL_IDX_MAX;
     gridDevices->RowCount = 5;
     gridDevices->Cells[COL_IDX_SEQ][0] = "Seq";
     gridDevices->Cells[COL_IDX_MODE][0] = "Mode";
@@ -41,32 +65,79 @@ __fastcall TFMain::TFMain(TComponent* Owner)
     gridDevices->Cells[COL_IDX_DEST][0] = "Destination";
     gridDevices->Cells[COL_IDX_TX][0] = "Tx(Msg)";
     gridDevices->Cells[COL_IDX_RX][0] = "Rx(Msg)";
-    gridDevices->Cells[COL_IDX_CLIENT][0] = "Client";
+    gridDevices->Cells[COL_IDX_CLIENT][0] = "Conn Status";
+    gridDevices->Cells[COL_IDX_ERR_MODE][0] = "Error Mode";
     gridDevices->Cells[COL_IDX_OPERATION][0] = "Operation";
 
     gridDevices->ColWidths[COL_IDX_SEQ] = 30;
     gridDevices->ColWidths[COL_IDX_MODE] = 120;
     gridDevices->ColWidths[COL_IDX_CONFIG] = 120;
-    gridDevices->ColWidths[COL_IDX_SOURCE] = 80;
-    gridDevices->ColWidths[COL_IDX_DEST] = 80;
-    gridDevices->ColWidths[COL_IDX_TX] = 80;
-    gridDevices->ColWidths[COL_IDX_RX] = 80;
+    gridDevices->ColWidths[COL_IDX_SOURCE] = 60;
+    gridDevices->ColWidths[COL_IDX_DEST] = 60;
+    gridDevices->ColWidths[COL_IDX_TX] = 60;
+    gridDevices->ColWidths[COL_IDX_RX] = 60;
     gridDevices->ColWidths[COL_IDX_CLIENT] = 80;
+    gridDevices->ColWidths[COL_IDX_ERR_MODE] = 80;
     gridDevices->ColWidths[COL_IDX_OPERATION] = 80;
+}
+//---------------------------------------------------------------------------
+void __fastcall TFMain::ReInitAllDeviceConfigure()
+{
+    gridDevices->FixedRows = 1;
+    int devicecnt = gridDevices->RowCount - 1;
+    try{
+        csWorkVar->Enter();
+        for (int i = 1; i <= devicecnt; i++){
+            // create opeation button in every row
+            TBitBtn *btn = new TBitBtn(this);
+            btn->Tag = i; // Save row index into button tag property
+            btn->Caption = "Open";
+            btn->Left = gridDevices->CellRect(COL_IDX_OPERATION,i).Left + 2;
+            btn->Top  = gridDevices->CellRect(COL_IDX_OPERATION,i).Top + 2;
+            btn->Width = gridDevices->ColWidths[COL_IDX_OPERATION];
+            btn->Height = gridDevices->RowHeights[i];
+            btn->Visible = false;
+            btn->Parent = this;
+            btn->Glyph->LoadFromResourceID((int)HInstance, 101);
+            btn->OnClick =  OperationButtonClick;
 
-    lstThreadObj = new TStringList();
-    csWorkVar = new TCriticalSection(); // Cretea critical section
-    
-    masterThread = new MasterWorkThread();
-    
-    ReloadConfigure();
-    if (gridDevices->RowCount <= 1){
-        return;
+            WorkItem wi;
+            wi.button = btn;
+            wi.thread = CreateWorkThread(i);
+            mWorkItems.insert(std::pair<int, WorkItem>(i, wi));
+            lstThreadObj->AddObject(gridDevices->Cells[COL_IDX_SOURCE][i], wi.thread);
+        }
+    }__finally{
+        csWorkVar->Leave();
     }
-    
-    UpdateOperationUI();
+}
+//---------------------------------------------------------------------------
+void __fastcall TFMain::UpdateUI()
+{
+    list<device_config_t*>::const_iterator it;
+    if (lstDeviceConfig.size() > 0){
+        gridDevices->RowCount = lstDeviceConfig.size() + 1;
+    }
+    const device_config_t* pDevCfg;
+    int row = 1;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        gridDevices->Cells[COL_IDX_MODE][row] = GetModeStr(pDevCfg->mode);
+        gridDevices->Cells[COL_IDX_CONFIG][row] = pDevCfg->configure;
+        gridDevices->Cells[COL_IDX_SOURCE][row] = pDevCfg->source;
+        gridDevices->Cells[COL_IDX_DEST][row] = pDevCfg->dest;
 
-    logger.Log("Main thread id is :" + IntToStr(::GetCurrentThreadId()));
+
+        gridDevices->Cells[COL_IDX_RX][row] = "0";
+        gridDevices->Cells[COL_IDX_TX][row] = "0";
+        gridDevices->Cells[COL_IDX_ERR_MODE][row] = GetDistributionDesc(pDevCfg->errorMode);
+
+        gridDevices->Cells[COL_IDX_SEQ][row] = pDevCfg->seq;
+        row++;
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TFMain::Exit1Click(TObject *Sender)
@@ -137,13 +208,25 @@ void TFMain::SaveConfigure()
 
     
     String sectionName;
-    for (int i = 1; i <= devicecnt; i++){
-        sectionName = "Device" + IntToStr(i);
-        ini->WriteString(sectionName, "Mode", gridDevices->Cells[COL_IDX_MODE][i]);
-        ini->WriteString(sectionName, "Configure", gridDevices->Cells[COL_IDX_CONFIG][i]);
-        ini->WriteString(sectionName, "Source", gridDevices->Cells[COL_IDX_SOURCE][i]);
-        ini->WriteString(sectionName, "Destination", gridDevices->Cells[COL_IDX_DEST][i]);
-    }
+    list<device_config_t*>::const_iterator it;
+    const device_config_t* pDevCfg;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        sectionName = "Device" + IntToStr(pDevCfg->seq);
+        ini->WriteString(sectionName, "Mode", GetModeStr(pDevCfg->mode));
+        ini->WriteString(sectionName, "Configure", pDevCfg->configure);
+        ini->WriteString(sectionName, "Source", pDevCfg->source);
+        ini->WriteString(sectionName, "Destination", pDevCfg->dest);
+        ini->WriteString(sectionName, "Head", pDevCfg->head);
+        ini->WriteInteger(sectionName, "Tag", pDevCfg->tag);
+        ini->WriteString(sectionName, "Message", pDevCfg->message);
+        ini->WriteString(sectionName, "EOFMessage", pDevCfg->eofMessage);
+        ini->WriteString(sectionName, "ErrorDistribution", GetDistributionDesc(pDevCfg->errorMode));
+        ini->WriteInteger(sectionName, "ErrorThreshold", pDevCfg->errorThreshold);
+    }   ini->WriteInteger(sectionName, "MaxMessageQueue", pDevCfg->iMaxMsgQueue);
     delete ini;
 }
 //---------------------------------------------------------------------------
@@ -177,7 +260,10 @@ void TFMain::ReloadConfigure()
     String sectionName;
     String itemVal;
     int seq = 1;
-    for (int i = 1; i <= devicecnt; i++){      
+    device_config_t* pDevCfg;
+    for (int i = 1; i <= devicecnt; i++){
+        pDevCfg = new device_config_t();
+        
         gridDevices->RowCount++;
         sectionName = "Device" + IntToStr(i);
 
@@ -188,7 +274,7 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_MODE][i] = itemVal;
+        pDevCfg->mode = GetModeFromStr(itemVal);
 
         itemVal = ini->ReadString(sectionName, "Configure", "X");
         if (itemVal == "X"){
@@ -197,7 +283,7 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_CONFIG][i] = itemVal;
+        pDevCfg->configure = itemVal;
 
         itemVal = ini->ReadString(sectionName, "Source", "X");
         if (itemVal == "X"){
@@ -206,7 +292,7 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_SOURCE][i] = itemVal;
+        pDevCfg->source = itemVal;
 
         itemVal = ini->ReadString(sectionName, "Destination", "X");
         if (itemVal == "X"){
@@ -215,45 +301,62 @@ void TFMain::ReloadConfigure()
             gridDevices->RowCount--;
             continue;
         }
-        gridDevices->Cells[COL_IDX_DEST][i] = itemVal;
+        pDevCfg->dest = itemVal;
 
-        gridDevices->Cells[COL_IDX_RX][i] = "0";
-        gridDevices->Cells[COL_IDX_TX][i] = "0";
-        gridDevices->Cells[COL_IDX_CLIENT][i] = "Disconnect";
+        itemVal = ini->ReadString(sectionName, "Head", "X");
+        if (itemVal == "X"){
+            ShowMessage("Failure to load devices infomation from configure in "
+                + sectionName + ".Head");
+            gridDevices->RowCount--;
+            continue;
+        }
+        pDevCfg->head = itemVal;
 
-        gridDevices->Cells[COL_IDX_SEQ][i] = IntToStr(seq);
-        seq++;
+        itemVal = ini->ReadString(sectionName, "Tag", "X");
+        if (itemVal == "X"){
+            ShowMessage("Failure to load devices infomation from configure in "
+                + sectionName + ".Tag");
+            gridDevices->RowCount--;
+            continue;
+        }
+        pDevCfg->tag = StrToInt(itemVal);
+
+        itemVal = ini->ReadString(sectionName, "Message", "X");
+        if (itemVal == "X"){
+            ShowMessage("Failure to load devices infomation from configure in "
+                + sectionName + ".Message");
+            gridDevices->RowCount--;
+            continue;
+        }
+        pDevCfg->message = itemVal;
+
+        itemVal = ini->ReadString(sectionName, "EOFMessage", "X");
+        if (itemVal == "X"){
+            ShowMessage("Failure to load devices infomation from configure in "
+                + sectionName + ".EOFMessage");
+            gridDevices->RowCount--;
+            continue;
+        }
+        pDevCfg->eofMessage = itemVal;
+
+        itemVal = ini->ReadString(sectionName, "ErrorDistribution", "X");
+        if (itemVal == "X"){
+            ShowMessage("Failure to load devices infomation from configure in "
+                + sectionName + ".ErrorDistribution");
+            gridDevices->RowCount--;
+            continue;
+        }
+        pDevCfg->errorMode = GetDistributionFromDesc(itemVal);
+        pDevCfg->errorThreshold = ini->ReadInteger(sectionName, "ErrorThreshold", 50);
+
+        pDevCfg->iMaxMsgQueue = ini->ReadInteger(sectionName, "MaxMessageQueue", 1);
+        
+        pDevCfg->seq = seq;
+
+        //Insert into proper position
+        lstDeviceConfig.push_back(pDevCfg);
     }
     delete ini;
-
-    gridDevices->FixedRows = 1;
-    devicecnt = gridDevices->RowCount - 1;
-
-    try{
-        csWorkVar->Enter();
-        for (int i = 1; i <= devicecnt; i++){
-            // create opeation button in every row
-            TBitBtn *btn = new TBitBtn(this);
-            btn->Tag = i; // Save row index into button tag property
-            btn->Caption = "Open";
-            btn->Left = gridDevices->CellRect(COL_IDX_OPERATION,i).Left + 2;
-            btn->Top  = gridDevices->CellRect(COL_IDX_OPERATION,i).Top + 2;
-            btn->Width = gridDevices->ColWidths[COL_IDX_OPERATION];
-            btn->Height = gridDevices->RowHeights[i];
-            btn->Visible = false;
-            btn->Parent = this;
-            btn->Glyph->LoadFromResourceID((int)HInstance, 101);
-            btn->OnClick =  OperationButtonClick;
-
-            WorkItem wi;
-            wi.button = btn;
-            wi.thread = CreateWorkThread(i);
-            mWorkItems.insert(std::pair<int, WorkItem>(i, wi));
-            lstThreadObj->AddObject(gridDevices->Cells[COL_IDX_SOURCE][i], wi.thread);
-        }
-    }__finally{
-        csWorkVar->Leave();
-    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TFMain::Saveconfigure1Click(TObject *Sender)
@@ -296,26 +399,19 @@ void __fastcall TFMain::OperationButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
 {
-    String modeStr = gridDevices->Cells[COL_IDX_MODE][rowidx];
-    String config = gridDevices->Cells[COL_IDX_CONFIG][rowidx];
-    String source  = gridDevices->Cells[COL_IDX_SOURCE][rowidx];
-    String dest  = gridDevices->Cells[COL_IDX_DEST][rowidx];
-
-    // Building a new parameter
-    WorkParameter param;
-    param.Mode = WORK_MODE_SERIAL;
-    param.Configure = config;
-    param.Source = source;
-    param.Destination = dest;
-    param.MasterQueue = masterThread->GetQueue();
+    list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+        advance(cit, rowidx - 1); // Move ahead iSeq element
+    const device_config_t* pDevCfg = *cit;
 
     WorkThread* thread;
-    if (modeStr == "Serial port"){
+    if (pDevCfg->mode == WORK_MODE_SERIAL){
         // create a new work thread
-        thread = new SerialWorkThread(param);
+        thread = new SerialWorkThread(pDevCfg,
+            masterThread->GetQueue(), pDevCfg->source);
     }else{
         // create a new server thread
-        thread = new ServerWorkThread(param);
+        thread = new ServerWorkThread(pDevCfg,
+            masterThread->GetQueue(), pDevCfg->source);
 
     }
     thread->Tag = rowidx;
@@ -324,7 +420,6 @@ WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
     thread->OnRxMsg = onRxMsg;
     thread->OnTxMsg = onTxMsg;
     thread->OnServerOpen = onServerOpenChannel;
-    thread->Name = source;
     thread->Resume();
     return thread;
 }
@@ -375,6 +470,7 @@ void __fastcall TFMain::btnOpenClick(TObject *Sender)
         masterThread->OnOpenChannel = onMasterOpenChannel;
         masterThread->OnCloseChannel = onMasterCloseChannel;
         masterThread->OnServerOpen = onMasterServerOpen;
+        masterThread->OnTextMessage = onTextMessage;
         masterThread->WorkVar = csWorkVar;
         masterThread->ThreadList = lstThreadObj;
         // open master
@@ -421,6 +517,7 @@ void __fastcall TFMain::btnConnectClick(TObject *Sender)
         masterThread->OnTxMsg = onMasterTxMsg;
         masterThread->OnOpenChannel = onMasterOpenChannel;
         masterThread->OnCloseChannel = onMasterCloseChannel;
+        masterThread->OnTextMessage = onTextMessage;
         masterThread->WorkVar = csWorkVar;
         masterThread->ThreadList = lstThreadObj;
         masterThread->InitConnect(txtPeerIP->Text, StrToInt(txtPeerPort->Text));
@@ -555,25 +652,30 @@ void __fastcall TFMain::UpdateMasterTxMsgCnt(TMessage* Msg)
 void __fastcall TFMain::UpdateMasterRxMsgCnt(TMessage* Msg)
 {
     //logger.Log("Mater Rx:" + IntToStr(Msg->LParam) + "/" + txtRxBytes->Text);
+    char caStrBuf[100];
     int bytes = StrToInt(txtRxBytes->Text);
     if (bytes == 0){
         mRxStartTick = ::GetTickCount();
     }
     bytes += Msg->LParam;
-    txtRxBytes->Text = IntToStr(bytes);
-    if (mRxStartTick > 0){
-        unsigned int seconds = ((GetTickCount() - mRxStartTick)/1000);
-        if (seconds > 0){
-            float rate = 1.0f * bytes / seconds;
-            if (rate > 1024){
-                lblRxRate->Caption = IntToStr((int)(rate/1024)) + "KB/S";
-            }else{
-                lblRxRate->Caption = IntToStr((int)rate) + "B/S";
-            }
-            if (seconds >= 60){
-                mTxStartTick = GetTickCount();
+    try{
+        txtRxBytes->Text = IntToStr(bytes);
+        if (mRxStartTick > 0){
+            unsigned int seconds = ((GetTickCount() - mRxStartTick)/1000);
+            if (seconds > 0){
+                float rate = 1.0f * bytes / seconds;
+                if (rate > 1024){
+                    snprintf(caStrBuf, sizeof(caStrBuf), "%d KB/S", (int)(rate/1024));
+                }else{
+                    snprintf(caStrBuf, sizeof(caStrBuf), "%d B/S", (int)(rate));
+                }
+                lblRxRate->Caption = AnsiString(caStrBuf);
+                if (seconds >= 60){
+                    mTxStartTick = GetTickCount();
+                }
             }
         }
+    }catch(Exception& e){
     }
 }
 void __fastcall TFMain::onMasterOpenChannel(WorkThread* Sender, bool opened)
@@ -600,28 +702,64 @@ void __fastcall TFMain::UpdateServerOpen(TMessage* Msg)
         TBitBtn* button = mWorkItems[rowidx].button;
         if (opened){
             button->Glyph->LoadFromResourceID((int)HInstance, 102);
+            button->Caption = "Close";
             button->Tag = rowidx | BUTTON_STATUS_STOP;
+            gridDevices->Cells[COL_IDX_CLIENT][rowidx] = "Listened";
         }else{
             ShowMessage("Open channel error in "
                 + gridDevices->Cells[COL_IDX_SOURCE][rowidx]
                 + "\r\n Configure:" + gridDevices->Cells[COL_IDX_CONFIG][rowidx]);
             button->Glyph->LoadFromResourceID((int)HInstance, 101);
+            button->Caption = "Open";
             button->Tag = rowidx;
         }
     }__finally{
         csWorkVar->Leave();
     }    
 }
+
+void __fastcall TFMain::onTextMessage(
+    int source, AnsiString msg)
+{
+    switch(source){
+    case TEXT_MSG_SRC_CLIENT_INFO:
+        txtPeerClientIP->Text = msg;
+        break;
+    case TEXT_MSG_SRC_OP_ERROR:
+        lblListenStatus->Caption = msg;
+        btnOpen->Tag = 0;
+        btnOpen->Glyph->LoadFromResourceID((int)HInstance, 101);
+        txtPeerClientIP->Color = clWindow;
+
+        rbMasterServerMode->Enabled = true;
+        rbMasterClientMode->Enabled = true;
+        break;
+    case TEXT_MSG_SRC_OP_ERROR_CLIENT:
+        btnConnect->Tag = 0;
+        btnConnect->Caption = "Connect";
+        btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
+        lblConnectStatus->Caption = msg;
+
+        rbMasterServerMode->Enabled = true;
+        rbMasterClientMode->Enabled = true;
+        break;
+    case TEXT_MSG_SRC_CLIENT_NOTIFY:
+        lblConnectStatus->Caption = msg;
+        break;
+    default:
+        ShowMessage(msg);
+    }
+}
+
 void __fastcall TFMain::UpdateMasterOpenStatus(TMessage* Msg)
 {
     if (rbMasterClientMode->Checked){
         btnConnect->Tag = 1;
         btnConnect->Caption = "Dis&connect";
         btnConnect->Glyph->LoadFromResourceID((int)HInstance, 102);
-        lblConnectStatus->Caption = "Peer master has connected.";
+        lblConnectStatus->Caption = "Remote master has connected.";
     }else{
         lblListenStatus->Caption = "Client has connected.";
-        txtPeerClientIP->Text = "Peer Master";
         txtPeerClientIP->Color = clMoneyGreen;
     }
 }
@@ -632,8 +770,10 @@ void __fastcall TFMain::UpdateMasterCloseStatus(TMessage* Msg)
         btnConnect->Caption = "&Connect";
         btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
         lblConnectStatus->Caption = "Wait to connect.......";
+        rbMasterServerMode->Enabled = true;
+        rbMasterClientMode->Enabled = true;
     }else{
-        lblListenStatus->Caption = "Client has connected.";
+        lblListenStatus->Caption = "Client has disconnected, keep wait.";
         txtPeerClientIP->Text = "";
         txtPeerClientIP->Color = clWindow;
     }
@@ -664,6 +804,17 @@ void __fastcall TFMain::FormClose(TObject *Sender, TCloseAction &Action)
     delete lstThreadObj;
 
     delete csWorkVar;
+
+    device_config_t* pDevCfg;
+    list<device_config_t*>::iterator it;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        delete pDevCfg;
+    }
+    lstDeviceConfig.clear();
     //ShowMessage("Close");    
 }
 //---------------------------------------------------------------------------
@@ -695,7 +846,7 @@ void TFMain::TerminateAllThread()
             it != mWorkItems.end();
             ++it){
             WorkThread* thread = (*it).second.thread;
-            thread->Stop();
+            //thread->Stop();
             thread->Terminate();
             /*if (!thread->Suspended){
                 thread->WaitFor();

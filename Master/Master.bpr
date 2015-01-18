@@ -6,46 +6,51 @@
     <PROJECT value="Master.exe"/>
     <OBJFILES value="Master.obj UMain.obj UWorkThread.obj UComm.obj ..\comm\LogFileEx.obj 
       ..\comm\UnitLogWriter.obj UMasterWorkThread.obj UMsg.obj UMsgQueue.obj 
-      UServerWorkThread.obj USerialWorkThread.obj"/>
+      UServerWorkThread.obj USerialWorkThread.obj ..\comm\Tools.obj 
+      loopbuffer.obj UClientWorkThread.obj UServerClientWorkThread.obj 
+      UMasterMessageHandler.obj ..\comm\UAlgorithm.obj"/>
     <RESFILES value="Master.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
     <DEFFILE value=""/>
     <RESDEPEN value="$(RESFILES) UMain.dfm"/>
     <LIBFILES value=""/>
-    <LIBRARIES value="yb_base_c6.lib yb_comm_c6.lib rtl.lib vcl.lib"/>
-    <SPARELIBS value="vcl.lib rtl.lib yb_comm_c6.lib yb_base_c6.lib"/>
+    <LIBRARIES value="adortl.lib dbrtl.lib inet.lib xmlrtl.lib vclx.lib yb_base_c6.lib 
+      yb_comm_c6.lib rtl.lib vcl.lib"/>
+    <SPARELIBS value="vcl.lib rtl.lib yb_comm_c6.lib yb_base_c6.lib vclx.lib xmlrtl.lib inet.lib 
+      dbrtl.lib adortl.lib"/>
     <PACKAGES value="vcl.bpi rtl.bpi dbrtl.bpi adortl.bpi vcldb.bpi vclx.bpi bdertl.bpi 
       vcldbx.bpi ibxpress.bpi dsnap.bpi cds.bpi bdecds.bpi qrpt.bpi teeui.bpi 
       teedb.bpi tee.bpi dss.bpi teeqr.bpi visualclx.bpi visualdbclx.bpi 
       dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
       inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
       bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi"/>
-    <PATHCPP value=".;..\comm;..\comm"/>
+    <PATHCPP value=".;..\comm;..\comm;..\comm;..\comm"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
     <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
     <RELEASELIBPATH value="$(BCB)\lib\release"/>
     <LINKER value="ilink32"/>
-    <USERDEFINES value=""/>
+    <USERDEFINES value="_DEBUG"/>
     <SYSDEFINES value="NO_STRICT"/>
     <MAINSOURCE value="Master.cpp"/>
-    <INCLUDEPATH value="..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL"/>
-    <LIBPATH value="..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL"/>
+    <INCLUDEPATH value="&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL"/>
+    <LIBPATH value="&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
   <OPTIONS>
-    <IDLCFLAGS value="-I..\Simulator -I..\comm 
+    <IDLCFLAGS value="-I&quot;C:\Program Files\Borland\CBuilder6\Projects&quot; -I..\Simulator -I..\comm 
       -I&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot; 
       -ID:\Projects\IORouter\sourcecode\Master -I$(BCB)\include 
-      -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -boa"/>
-    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -b- -k- -vi -c -tW -tWM"/>
-    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
+      -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -D_DEBUG -boa"/>
+    <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -c 
+      -tW -tWM"/>
+    <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
-    <AFLAGS value="/mx /w2 /zn"/>
-    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn"/>
+    <AFLAGS value="/mx /w2 /zi"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn -v"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
@@ -67,6 +72,12 @@
       <FILE FILENAME="UMsgQueue.cpp" FORMNAME="" UNITNAME="UMsgQueue.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="UServerWorkThread.cpp" FORMNAME="" UNITNAME="UServerWorkThread.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="USerialWorkThread.cpp" FORMNAME="" UNITNAME="USerialWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\comm\Tools.cpp" FORMNAME="" UNITNAME="Tools" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="loopbuffer.c" FORMNAME="" UNITNAME="loopbuffer" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UClientWorkThread.cpp" FORMNAME="" UNITNAME="UClientWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UServerClientWorkThread.cpp" FORMNAME="" UNITNAME="UServerClientWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UMasterMessageHandler.cpp" FORMNAME="" UNITNAME="UMasterMessageHandler" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\comm\UAlgorithm.cpp" FORMNAME="" UNITNAME="UAlgorithm" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -78,7 +89,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=0
 Release=1
-Build=0
+Build=2
 Debug=0
 PreRelease=0
 Special=0
@@ -90,7 +101,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=
 FileDescription=
-FileVersion=1.0.1.0
+FileVersion=1.0.1.2
 InternalName=
 LegalCopyright=
 LegalTrademarks=
@@ -100,16 +111,18 @@ ProductVersion=1.0.0.0
 Comments=
 
 [HistoryLists\hlIncludePath]
-Count=3
-Item0=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
-Item1=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
-Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl
+Count=4
+Item0=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
+Item1=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
+Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL
+Item3=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
-Count=3
-Item0=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
-Item1=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
-Item2=C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib
+Count=4
+Item0=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item1=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item3=C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1

@@ -173,7 +173,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 {
 }
 //---------------------------------------------------------------------------
-#define N 20
+#define N 100
 #define NPTS 10000
 #define ISCAL 200
 void __fastcall TForm1::Button1Click(TObject *Sender)
@@ -187,6 +187,7 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
         j=(int) (0.5+N*(ran1(&seed)));
         if ((j >= 0) && (j <= N)) ++dist[j];
      }
+     Series1->Clear();
     for (i = 1; i <= N; i++){
         Memo1->Lines->Add(IntToStr(dist[i]));
         Series1->AddXY(i, dist[i],"",0xFF0000);
@@ -201,6 +202,7 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
         j=(int) (0.5+poidev(xm,&idum));
         if ((j >= 0) && (j <= N)) ++dist[j];
      }
+     Series2->Clear();
     for (i = 1; i <= N; i++){
 //        value = (int)(poidev(100, &seed));
         Memo2->Lines->Add(IntToStr(dist[i]));
@@ -216,3 +218,44 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TForm1::Button2Click(TObject *Sender)
+{
+    int val;
+    int dist[N+1]={0};
+    FSeed = 0- StrToInt(Edit1->Text);
+    Memo1->Lines->Clear();
+    Series1->Clear();
+    memset(dist, 0, sizeof(dist));
+    for (int i = 1; i <= NPTS; i++){
+        val = getRandRange(1, 1, 100);
+        if ((val >= 0) && (val <= N)) ++dist[val];
+    }
+    for (int i = 1; i <= N; i++){
+        Memo1->Lines->Add(IntToStr(dist[i]));
+        Series1->AddXY(i, dist[i],"",255);
+    }
+
+    FSeed = 0- StrToInt(Edit1->Text);
+    Memo2->Lines->Clear();
+    Series2->Clear();
+    memset(dist, 0, sizeof(dist));
+    for (int i = 1; i <= NPTS; i++){
+        val = getRandRange(2, 1, 100);
+        if ((val >= 0) && (val <= N)) ++dist[val];
+    }
+    for (int i = 1; i <= N; i++){
+        Memo2->Lines->Add(IntToStr(dist[i]));
+        Series2->AddXY(i, dist[i],"",255);
+    }
+}
+//---------------------------------------------------------------------------
+int __fastcall TForm1::getRandRange(int mode, int from , int to)
+{
+    if (mode == 1){
+        return from + 0.5 + ran1(&FSeed) * (to - from);
+    }else if(mode == 2){
+        return from + 0.5 + poidev((to - from)/2, &FSeed);
+    }else{
+        return from;
+    }
+}

@@ -22,7 +22,7 @@
 //      }
 //---------------------------------------------------------------------------
 
-__fastcall SerialWorkThread::SerialWorkThread(const device_config_t* pDevCfg)
+__fastcall SerialWorkThread::SerialWorkThread(device_config_t* pDevCfg)
     : WorkThread(pDevCfg)
 {
     receivePos = 0; //Rest receive position to zero

@@ -60,18 +60,18 @@ object FMain: TFMain
     Caption = 'Master'
     TabOrder = 1
     object lblPeerIP: TLabel
-      Left = 136
+      Left = 112
       Top = 16
-      Width = 73
+      Width = 100
       Height = 13
-      Caption = 'Peer Master IP:'
+      Caption = 'Remote Master Host:'
     end
     object lblPeerPort: TLabel
       Left = 344
       Top = 16
-      Width = 82
+      Width = 96
       Height = 13
-      Caption = 'Peer Master Port:'
+      Caption = 'Master Service Port:'
     end
     object lblMasterPort: TLabel
       Left = 136
@@ -84,9 +84,9 @@ object FMain: TFMain
     object lblPeerClientIP: TLabel
       Left = 288
       Top = 40
-      Width = 101
+      Width = 96
       Height = 13
-      Caption = 'Peer Connect Status:'
+      Caption = 'Remote Host Name:'
       Enabled = False
     end
     object lblConnectStatus: TLabel

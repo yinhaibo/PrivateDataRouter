@@ -10,7 +10,7 @@
 #pragma package(smart_init)
 
 
-__fastcall ClientWorkThread::ClientWorkThread(const device_config_t* pDevCfg)
+__fastcall ClientWorkThread::ClientWorkThread(device_config_t* pDevCfg)
     : WorkThread(pDevCfg)
 {
     receivePos = 0; //Rest receive position to zero
@@ -66,7 +66,7 @@ int __fastcall ClientWorkThread::sendData(unsigned char* pbuffer, int len)
     if(mClient->Active){
         try{
             int sendLen = 0;
-            while(sendLen < len){
+            while(mClient->Socket->Connected && sendLen < len){
                 sendLen = mClient->Socket->SendBuf(pbuffer + sendPos,
                     len - sendPos);
                 if (sendLen > 0){
@@ -126,6 +126,7 @@ void ClientWorkThread::initParameters()
     mClient->OnConnect = onSocketConnect;
     mClient->OnDisconnect = onSocketDisconnect;
     mClient->OnRead = onSocketRead;
+    mClient->OnWrite = onSocketWrite;
     mClient->OnError = onSocketError;
 }
 void __fastcall ClientWorkThread::onSocketConnect(System::TObject* Sender,
@@ -165,10 +166,18 @@ void __fastcall ClientWorkThread::onSocketRead(System::TObject* Sender,
         //LogMsg("Read event.");
     }
 }
+void __fastcall ClientWorkThread::onSocketWrite(System::TObject* Sender,
+    TCustomWinSocket* Socket)
+{
+    if (mClient != NULL){
+        isEnableWrite = true;
+    }
+}
+
 void __fastcall ClientWorkThread::onSocketError(System::TObject* Sender,
     TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode)
 {
-    LogMsg("Socket error:" + IntToStr(Socket->Handle));
+    LogMsg("Socket error:" + IntToStr(ErrorCode));
     socketErrorProcess();
     ErrorCode = 0;
 }
@@ -187,6 +196,7 @@ void __fastcall ClientWorkThread::socketErrorProcess()
             }
             mIsRunning = false;
         }
+        isEnableWrite = false;
         FPeerReady = false;
     }
 }

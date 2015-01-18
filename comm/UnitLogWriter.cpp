@@ -87,7 +87,7 @@ void LogFile::WriteLog( LPCVOID lpBuffer, DWORD dwLength)
 
         //WriteFile(_hFile, lpBuffer, dwLength, &dwWriteLength, NULL);
         
-        FlushFileBuffers(_hFile);
+        //FlushFileBuffers(_hFile);
  
     }
 }

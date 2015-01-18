@@ -21,6 +21,7 @@ private:
     void __fastcall onSocketConnect(System::TObject* Sender, TCustomWinSocket* Socket);
     void __fastcall onSocketDisconnect(System::TObject* Sender, TCustomWinSocket* Socket);
     void __fastcall onSocketRead(System::TObject* Sender, TCustomWinSocket* Socket);
+    void __fastcall onSocketWrite(System::TObject* Sender, TCustomWinSocket* Socket);
     void __fastcall onSocketError(System::TObject* Sender,
         TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode);
 
@@ -39,6 +40,6 @@ public:
     /*__fastcall ClientWorkThread(const WorkParameter& param,
         const message_t* preqMsg,
         const message_t* prespMsg);*/
-    __fastcall ClientWorkThread(const device_config_t* pDevCfg);
+    __fastcall ClientWorkThread( device_config_t* pDevCfg);
 };
 #endif

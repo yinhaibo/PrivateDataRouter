@@ -14,10 +14,12 @@
 #include <ScktComp.hpp>
 #include <map>
 #include <queue>
+#include <list>
 
 #include "UWorkThread.h"
 #include "UMasterWorkThread.h"
 #include "LogFileEx.h"
+#include "UComm.h"
 
 using namespace std;
 
@@ -115,7 +117,11 @@ private:	// User declarations
     TStringList* lstThreadObj;
     
     WorkThread* __fastcall CreateWorkThread(int rowidx);
+    list<device_config_t*> lstDeviceConfig; // Device configure list
 
+    void __fastcall CreateUI();
+    void __fastcall UpdateUI();
+    void __fastcall ReInitAllDeviceConfigure();
     void UpdateOperationUI();
     // configure
     void ReloadConfigure();
@@ -157,6 +163,8 @@ private:	// User declarations
     void __fastcall onMasterOpenChannel(WorkThread* Sender, bool opened);
     void __fastcall onMasterCloseChannel(WorkThread* Sender, bool closed);
     void __fastcall onMasterServerOpen(WorkThread* Sender, bool closed);
+    void __fastcall onTextMessage(int source, AnsiString msg);
+
 
     void __fastcall UpdateOpenStatus(TMessage* Msg);
     void __fastcall UpdateCloseStatus(TMessage* Msg);

@@ -9,56 +9,36 @@
 #include "UMsg.h"
 #include "UWorkThread.h"
 #include "LogFileEx.h"
+#include "UMasterMessageHandler.h"
 
-#define MESSAGE_BUF_LEN 100
 
-int BuildNetMessage(
-        const Msg* pmsg,
-        unsigned char* netmsgbuf, unsigned int buflen);
-Msg* ResloveNetMessage(
-        const unsigned char* netmsgbuf, const unsigned int buflen
-        );
+
 
 class MasterWorkThread;
 typedef void __fastcall (__closure *TRxMasterMsgEvent)(MasterWorkThread* Sender,
                                                    int msgcnt);
 typedef void __fastcall (__closure *TTxMasterMsgEvent)(MasterWorkThread* Sender,
                                                    int msgcnt);
+typedef void __fastcall (__closure *TTextMessageEvent)(int source, AnsiString msg);
+#define TEXT_MSG_SRC_CLIENT_INFO     1
+#define TEXT_MSG_SRC_OP_ERROR        2
+#define TEXT_MSG_SRC_OP_ERROR_CLIENT 3
+#define TEXT_MSG_SRC_CLIENT_NOTIFY   4
 
-typedef enum _work_status_t{
-    WORK_STATUS_WAIT,           // Wait to connect
-    WORK_STATUS_DELAYCONNECT,   //
-    WORK_STATUS_CONNECT,        // Wait to connected
-    WORK_STATUS_LISTEN,         // Wait client to connect in server mode only.
-    WORK_STATUS_WORKING,        // Wait receive and send message, go to connect while error occur.
-    WORK_STATUS_STOP            // Stoping and goto wait
-}work_status_t;
-
-class MessageHandler{
-public:    
-    virtual void __fastcall ProcessMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream) = 0;
-};
-class MasterWorkThread : public TThread, public MessageHandler
+class ServerClientWorkThread;
+class MasterWorkThread : public TThread
 {
 private:
-    MsgQueue* queue;
-    bool readable;
-    bool writeable;
-    unsigned char receiveBuf[MESSAGE_BUF_LEN];
-    unsigned char sendBuf[MESSAGE_BUF_LEN];
-    int receivePos;
-    int messageLen;
-    int sendPos;
-    int sendMessageLen;
-    unsigned int lastReportTick;
     TRxMasterMsgEvent FOnRxMsg;
     TTxMasterMsgEvent FOnTxMsg;
 
     TOpenChannelEvent FOnServerOpen;
     TOpenChannelEvent FOnOpenChannel;
     TCloseChannelEvent FOnCloseChannel;
+    TTextMessageEvent FOnTextMessage;
 
+    MsgQueue* queue;
+    
     AnsiString FIp;
     int FPort;
     work_status_t FStatus;
@@ -69,14 +49,16 @@ private:
     // Server object and their client object
     TServerSocket* mServer;
     TCustomWinSocket* mClientPeer;
-    // Client Object
+
+    MasterMessageHandler* FMsgHandler;
 
     TClientSocket* mClient;
 
+    ServerClientWorkThread* currSocketThread; // Client Work Thread for server mode
 
     TCriticalSection* csVariant;
     TCriticalSection* csWorkVar;
-    TStringList* FThreadList;
+    TStringList* FThreadList; //Set by main program
 
 
     void dispatchMsgSafe(Msg* pmsg);
@@ -91,14 +73,17 @@ private:
     void __fastcall onSocketError(System::TObject* Sender,
         TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode);
     void __fastcall onServerListen(TObject *Sender, TCustomWinSocket *Socket);
+    void __fastcall onServerAccept(TObject *Sender, TCustomWinSocket *Socket);
     void __fastcall onGetThread(System::TObject* Sender,
             TServerClientWinSocket* ClientSocket,
             TServerClientThread* &SocketThread);
 
-    void __fastcall onSendMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
-    Msg * __fastcall onReceiveMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
+    int FSource;
+    AnsiString FTextMessage;
+    void __fastcall UpdateTextMessageUI(void);
+    
+    void CloseClientConnection();
+
 
     TWinSocketStream *pStream;   // Socket stream in blocking mode
 
@@ -111,6 +96,8 @@ private:
     void __fastcall Open(int port);
     void __fastcall Open(AnsiString ip, int port);
     void __fastcall Close();
+
+    void LogMsg(AnsiString msg);
 public:
     __fastcall MasterWorkThread();
     __fastcall virtual ~MasterWorkThread(void);
@@ -119,6 +106,7 @@ public:
     void __fastcall InitConnect(AnsiString ip, int port);
     void __fastcall StartWorking();
     void __fastcall StopWorking();
+    
 
     __property TRxMasterMsgEvent OnRxMsg  = { read=FOnRxMsg, write=FOnRxMsg };
     __property TTxMasterMsgEvent OnTxMsg  = { read=FOnTxMsg, write=FOnTxMsg };
@@ -128,6 +116,9 @@ public:
     __property TOpenChannelEvent OnServerOpen  = { read=FOnServerOpen, write=FOnServerOpen };
     __property TOpenChannelEvent OnOpenChannel  = { read=FOnOpenChannel, write=FOnOpenChannel };
     __property TCloseChannelEvent OnCloseChannel  = { read=FOnCloseChannel, write=FOnCloseChannel };
+    __property TTextMessageEvent OnTextMessage  = { read=FOnTextMessage, write=FOnTextMessage };
+
+
 
     //void Writeable(bool val); // socket enable to write again
     IQueue* GetQueue();  // Return Message Queue
@@ -135,49 +126,14 @@ public:
     virtual void __fastcall Execute(void);
     __property bool AutoReconnect  = { read=FAutoReconnect, write=FAutoReconnect };
 
-    
-    virtual void __fastcall ProcessMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
+
     void dispatchMsg(Msg* pmsg);
     
     void LogRxMsg(Msg* pmsg);
     void LogTxMsg(Msg* pmsg);
 };
 
-class ServerClientWorkThread : public TServerClientThread
-{
-private:
-    MasterWorkThread* FMaster;
 
-    int receivePos;
-    int messageLen;
-    int sendPos;
-    int sendMessageLen;
-
-    unsigned char receiveBuf[MESSAGE_BUF_LEN];
-    unsigned char sendBuf[MESSAGE_BUF_LEN];
-
-    unsigned int txMsgCnt;
-    unsigned int rxMsgCnt;
-    int recvLen;
-
-    unsigned int lastReportTick;
-
-    IQueue* queue;
-    void __fastcall Close();
-    void __fastcall ProcessMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
-    void __fastcall onSendMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
-    Msg * __fastcall onReceiveMessage(TCustomWinSocket* client,
-        TWinSocketStream *stream);
-public:
-    ServerClientWorkThread(
-        TServerClientWinSocket* ASocket,
-        MasterWorkThread* master);
-protected:
-    virtual void __fastcall ClientExecute(void);
-};
 
 //---------------------------------------------------------------------------
 #endif

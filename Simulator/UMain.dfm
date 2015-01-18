@@ -3427,6 +3427,32 @@ object FMain: TFMain
     TickMarks = tmBottomRight
     TickStyle = tsAuto
   end
+  object txtResult: TMemo
+    Left = 0
+    Top = 0
+    Width = 921
+    Height = 353
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Fixedsys'
+    Font.Style = []
+    ParentFont = False
+    TabOrder = 12
+    Visible = False
+    OnDblClick = txtResultDblClick
+  end
+  object btnResult: TButton
+    Left = 928
+    Top = 248
+    Width = 92
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = '&Result'
+    TabOrder = 13
+    OnClick = btnResultClick
+  end
   object MainMenu1: TMainMenu
     Left = 8
     Top = 184
@@ -3648,5 +3674,11 @@ object FMain: TFMain
         OnClick = About1Click
       end
     end
+  end
+  object tmrWriteResult: TTimer
+    Interval = 60000
+    OnTimer = tmrWriteResultTimer
+    Left = 512
+    Top = 192
   end
 end
