@@ -124,7 +124,7 @@ void __fastcall ServerWorkThread::onGetThread(TObject *Sender,
 {
     LogMsg("onGetThread");
     SocketThread = currSocketThread = new ClientWorkThread(ClientSocket,
-        &lpbufRx, &lpbufTx, csBuffer);
+        FName, &lpbufRx, &lpbufTx, csBuffer);
 }
 //---------------------------------------------------------------------------
 // Client starting to build a new client

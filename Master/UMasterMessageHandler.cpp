@@ -12,6 +12,7 @@
 
 extern LogFileEx logger;
 
+
 MasterMessageHandler::MasterMessageHandler(
         MasterWorkThread* master)
 {
@@ -25,22 +26,23 @@ MasterMessageHandler::MasterMessageHandler(
 
     txMsgCnt = 0;
     rxMsgCnt = 0;
-    recvLen = 0;
+    FOffset = 0;
     lastReportTick = 0;
+
+    recvStatus = NET_MASTER_RECV_HEAD;
 }
 
 //---------------------------------------------------------------------------
 void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
         TWinSocketStream *stream)
 {
-    
     if (client != NULL ){
         if (sendMessageLen == 0 && !queue->Empty()){
             //logger.Log("Pop a Message");//, Queue Count is " + IntToStr(queue->Count()));
             Msg *pmsg = queue->Pop();
             //logger.Log("Get a message.");
             // build message
-            sendMessageLen = BuildNetMessage(pmsg, sendBuf, MESSAGE_BUF_LEN);
+            sendMessageLen = BuildNetMessage(pmsg, sendBuf, NETMESSAGE_MAX_LEN);
             // logger
             FMaster->LogTxMsg(pmsg);
             delete pmsg;
@@ -65,46 +67,108 @@ void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
         }
     }
 }
+
+int MasterMessageHandler::getDataFromSock(
+        TCustomWinSocket* client, TWinSocketStream *stream,
+        unsigned char* buffer, int len, int& offset)
+{
+    if(client != NULL && stream != NULL){
+        try{
+            if (stream->WaitForData(1)){
+                if(!client->Connected)  return CODE_CONN_CLOSE;
+                if(FMaster->isTerminated()) return CODE_THREAD_TERMINATE;
+
+                int rvLen = stream->Read(buffer + offset, len);
+                if (rvLen < 0){
+                    LogMsg("Peer close stream.");
+                    client->Close();
+                    return CODE_CONN_CLOSE;
+                }
+                offset += rvLen;
+                if (offset == len){
+                    return len;
+                }else{
+                    return CODE_NEED_CALL_NEXT;
+                }
+            }else{
+                return 0;
+            }
+        }catch(...){
+            logger.Log("Master read error.");
+            client->Close();
+            return NULL;
+        }
+    }else{
+        return -1;
+    }
+}
+        
 Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client,
         TWinSocketStream *stream)
 {
-    if(client != NULL && stream != NULL){
-        if (stream->WaitForData(1)){
-            if(!client->Connected)  return NULL;
-            try{
-                if (messageLen == 0){
-                    recvLen = stream->Read(receiveBuf + receivePos,
-                        NETMESSAGE_HEADLEN - receivePos);
-                }else{
-                    recvLen = stream->Read(receiveBuf + receivePos,
-                                    messageLen - receivePos);
-                }
-            }catch(...){
-                logger.Log("Master read error.");
-                client->Close();
-                return NULL;
-            }
-            if (recvLen > 0){
-
-                receivePos += recvLen;
-                rxMsgCnt += recvLen;
-                if (receivePos == NETMESSAGE_HEADLEN){
-                    messageLen = NETMESSAGE_HEAD(receiveBuf, 0);
-                }else if (receivePos == messageLen){
-                    // get a message, neet to post to queue
-                    Msg *pmsg = ResloveNetMessage(receiveBuf, messageLen);
-
-                    messageLen = 0;
-                    receivePos = 0;
-
-                    return pmsg;
-                }
-            }else{
-                client->Close();
-            }
+    int rv;
+    Msg *pmsg = NULL;
+    switch(recvStatus){
+    case NET_MASTER_RECV_HEAD:
+        rv = getDataFromSock(client, stream,
+                receiveBuf, NET_MESSAGE_HEAD_LEN, FOffset);
+        if (rv != NET_MESSAGE_HEAD_LEN){
+            break;
         }
+        FOffset = 0;
+        
+        if (!IS_NET_MESSAGE_HEAD(receiveBuf)){
+            LogMsg("Invalid messgae head.");
+            //Continue to receive message head
+            break;
+        }
+        receivePos = NET_MESSAGE_HEAD_LEN;
+        recvStatus = NET_MASTER_RECV_LEN;
+        //pass through
+    case NET_MASTER_RECV_LEN:
+        rv = getDataFromSock(client, stream,
+                receiveBuf + receivePos, NETMESSAGE_LEN_LEN, FOffset);
+        if (rv != NETMESSAGE_LEN_LEN){
+            break;
+        }
+        FOffset = 0;
+        
+        messageLen = NETMESSAGE_LEN(receiveBuf, receivePos);
+        if (messageLen < NETMESSAGE_MIN_LEN
+            || messageLen > NETMESSAGE_MAX_LEN){
+            LogMsg("Invalid message len.[" + IntToStr(NETMESSAGE_MIN_LEN)
+                + "," + IntToStr(NETMESSAGE_MAX_LEN));
+            break;
+        }
+        receivePos += NETMESSAGE_LEN_LEN;
+        recvStatus = NET_MASTER_RECV_DATA;
+        //pass through
+    case NET_MASTER_RECV_DATA:
+        rv = getDataFromSock(client, stream,
+                receiveBuf + receivePos, messageLen
+                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN, FOffset);
+        if (rv != messageLen
+                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN){
+            break;
+        }
+
+        // get a message, neet to post to queue
+        pmsg = ResloveNetMessage(receiveBuf, messageLen);
+        // logger
+        FMaster->LogRxMsg(pmsg);
+
+        FOffset = 0;
+        recvStatus = NET_MASTER_RECV_HEAD;
+        receivePos = 0;
+        messageLen = 0;
+        return pmsg;
+    default:
+        LogMsg("Invalid Recv Status.");
     }
-    return NULL;
+            
+    if(rv == CODE_NEED_CALL_NEXT){
+    }
+    return pmsg;
 }
 
 void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
@@ -147,4 +211,9 @@ void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
         // write error will disconnect socket
         //mClientPeer = NULL;
     }
+}
+void MasterMessageHandler::LogMsg(AnsiString msg)
+{
+    logger.Log("Master Handler[" + IntToStr(GetCurrentThreadId())
+        + "]\t" + msg);
 }

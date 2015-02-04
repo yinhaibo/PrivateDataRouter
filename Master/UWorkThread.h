@@ -115,8 +115,8 @@ protected:
     message_t mMessage;
     message_t mEOFMessage;
 
-    message_t mReceiveMsgBuf;
-    message_t mSendMsgBuf;
+    //message_t mReceiveMsgBuf;
+    //message_t mSendMsgBuf;
 
     int receivePos;
     int sendPos;
@@ -147,8 +147,8 @@ protected:
 
     // makeError : the subclass will generate a error message to send
     // The delay control by this super class.
-    virtual bool __fastcall onSendMessage(message_t& msg, int error);
-    virtual message_t* __fastcall onReceiveMessage(int error);
+    virtual bool __fastcall onSendMessage(RawMsg& msg, int error);
+    virtual RawMsg* __fastcall onReceiveMessage(int error);
     
     //Work Thread subclass need to implement send and receive functions.
     virtual int __fastcall sendData(unsigned char* pbuffer, int len) = 0;

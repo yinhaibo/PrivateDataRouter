@@ -5,8 +5,6 @@
 #include <system.hpp>
 
 
-#define MESSAGE_BUF_LEN 100
-
 // Work mode
 // Only support Serial port and tcp client mode
 enum WorkMode{
@@ -55,7 +53,8 @@ typedef struct _device_config_t{
 
 //---------------------------------------------------------------------------
 // Message define
-#define MAX_MESSAGE_LEN 10
+#define MAX_CONTENT_LEN 10
+#define MIN_MESSAGE_LEN 18
 #define MAX_RAW_BUFFER_SIZE 1024
 // USING ONE BYTE ALIGNMENT
 #pragma pack(1)
@@ -76,9 +75,10 @@ typedef struct _message_t{
     unsigned char  seq;             // Sequence of message
     timestamp_t   timestamp;        // Timestamp of message
     unsigned char clen;             // Message content length
-    char content[MAX_MESSAGE_LEN];  // Message content
+    char content[MAX_CONTENT_LEN];  // Message content
     unsigned short    crc16;        // CRC16 of the message from seq to content
 }message_t;
+#define MAX_MESSAGE_LEN  (sizeof(message_t))
 #pragma pack()
 
 ////////////////////////////////////////////////////////////////

@@ -106,6 +106,7 @@ public:
     void __fastcall InitConnect(AnsiString ip, int port);
     void __fastcall StartWorking();
     void __fastcall StopWorking();
+    bool __fastcall isTerminated();
     
 
     __property TRxMasterMsgEvent OnRxMsg  = { read=FOnRxMsg, write=FOnRxMsg };

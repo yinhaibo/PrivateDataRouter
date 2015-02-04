@@ -14,16 +14,19 @@ extern LogFileEx logger;
 //---------------------------------------------------------------------------
 // ClientWorkThread Implements
 //---------------------------------------------------------------------------
-__fastcall ClientWorkThread::ClientWorkThread(TServerClientWinSocket *sock,
+__fastcall ClientWorkThread::ClientWorkThread(
+            TServerClientWinSocket *sock,
+            AnsiString& name,
             ploop_buff_t lpbufRx, ploop_buff_t lpbufTx,
             TCriticalSection* csBuffer)
-    : TServerClientThread(true, sock)
+    : TServerClientThread(true, sock), FName(name)
 {
     _lpbufRx = lpbufRx;
     _lpbufTx = lpbufTx;
     _csBuffer = csBuffer;
 
-    logger.Log("ClientWorkThread new[" + IntToStr(GetCurrentThreadId()) + "]");
+    logger.Log("ClientWorkThread " + FName + " new["
+        + IntToStr(GetCurrentThreadId()) + "]");
     Resume();
 }
 
@@ -48,6 +51,7 @@ void __fastcall ClientWorkThread::ClientExecute(void)
         case CWT_SOCK_RECV_STATUS:
             try{
                 ClientSocket->Lock();
+                //LogMsg("Wait for data 10ms");
                 if(stream->WaitForData(10)){
                     if(!((!this->Terminated) && (ClientSocket->Connected)))  break;
                     try{
@@ -94,25 +98,36 @@ void __fastcall ClientWorkThread::ClientExecute(void)
         }
             
         // Write to stream
+        int iRdPos = 0;
+        int iWtPos;
         try{
+            //LogMsg("Write to peer client.");
             ClientSocket->Lock();
             try{
                 _csBuffer->Enter();
                 while((!this->Terminated) && (ClientSocket->Connected)
-                    && !loopbuff_isempty(_lpbufTx)){
-                    ucByte = loopbuff_pull(_lpbufTx) & 0xFF;
-                    try{
-                        wtLen = stream->Write(&ucByte, 1);
-                    }catch(Exception& e){
-                        ClientSocket->Close();
-                    }
-                    if (wtLen != 1){
-                        // socket buffer full, need to wait
-                        break;
-                    }
+                    && !loopbuff_isempty(_lpbufTx) && iRdPos < DATA_OP_BUF_LEN){
+                    ucaSendBuff[iRdPos++] = loopbuff_pull(_lpbufTx) & 0xFF;
                 }
             }__finally{
                 _csBuffer->Leave();
+            }
+            iWtPos = 0;
+            while(!this->Terminated && ClientSocket->Connected
+                  && iRdPos > 0 && iWtPos < iRdPos){
+                wtLen = stream->Write(ucaSendBuff + iWtPos, iRdPos - iWtPos);
+                if (wtLen == 0){ // Has a exception while write bytes
+                    //Client close the connection
+                    ClientSocket->Close();
+                    break;
+                }
+                iWtPos += wtLen;
+                if (iWtPos != iRdPos){
+                    LogMsg("Socket buffer full, wait for 100ms.");
+                    Sleep(100);
+                    // socket buffer full, need to wait
+                    break;
+                }
             }
         }__finally{
             ClientSocket->Unlock();
@@ -129,6 +144,6 @@ __fastcall ClientWorkThread::~ClientWorkThread()
 }
 void ClientWorkThread::LogMsg(AnsiString msg)
 {
-    logger.Log("[Client]\t" + msg);
+    logger.Log("[Client:" + FName + "]\t" + msg);
 }
 #pragma package(smart_init)

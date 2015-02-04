@@ -258,17 +258,30 @@ void MasterWorkThread::dispatchMsgSafe(Msg* pmsg)
 void MasterWorkThread::LogRxMsg(Msg* pmsg)
 {
     static char buffer[100];
-    snprintf(buffer, 100, "[Master]Rx:[%s->%s] CL:%d", pmsg->from
-        , pmsg->to, (pmsg->rawmsg.clen));
+    if (pmsg == NULL){
+        snprintf(buffer, 100, "[Master]Tx:[NULL]");
+    }else{
+        snprintf(buffer, 100, "[Master]Rx:[%s->%s] L:%d", pmsg->from
+            , pmsg->to, (pmsg->rawmsg.len));
+    }
     logger.Log(buffer);
 }
 
 void MasterWorkThread::LogTxMsg(Msg* pmsg)
 {
     static char buffer[100];
-    snprintf(buffer, 100, "[Master]Tx:[%s->%s] CL:%d", pmsg->from
-        , pmsg->to, (pmsg->rawmsg.clen));
+    if (pmsg == NULL){
+        snprintf(buffer, 100, "[Master]Tx:[NULL]");
+    }else{
+        snprintf(buffer, 100, "[Master]Tx:[%s->%s] L:%d", pmsg->from
+            , pmsg->to, (pmsg->rawmsg.len));
+    }
     logger.Log(buffer);
+}
+
+bool __fastcall MasterWorkThread::isTerminated()
+{
+    return this->Terminated;
 }
 
 //---------------------------------------------------------------------------

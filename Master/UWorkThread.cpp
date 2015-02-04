@@ -50,9 +50,9 @@ __fastcall WorkThread::WorkThread(const device_config_t* pDevCfg,
     CREATE_MESSAGE(mMessage, pDevCfg->head, pDevCfg->tag,
         1, pDevCfg->message);
     CREATE_MESSAGE(mEOFMessage, pDevCfg->head, pDevCfg->tag,
-        1, pDevCfg->eofMessage); 
-    memset(&mReceiveMsgBuf, 0, sizeof(mReceiveMsgBuf));
-    memset(&mSendMsgBuf, 0, sizeof(mSendMsgBuf));
+        1, pDevCfg->eofMessage);
+    /*memset(&mReceiveMsgBuf, 0, sizeof(mReceiveMsgBuf));
+    memset(&mSendMsgBuf, 0, sizeof(mSendMsgBuf));*/
     
     mMsgStatus = RECV_MSG_STATUS_HEAD;
 
@@ -85,10 +85,10 @@ void __fastcall WorkThread::Stop()
 }
 //---------------------------------------------------------------------------
 // Do send message
-bool __fastcall WorkThread::onSendMessage(message_t& msg, int error)
+bool __fastcall WorkThread::onSendMessage(RawMsg& msg, int error)
 {
     int wpos = 0;
-    int headpartlen = offsetof(message_t, content);
+    /*int headpartlen = offsetof(message_t, content);
     memcpy(sendRawBuff + wpos, &msg.head, headpartlen);
     wpos += headpartlen;
     memcpy(sendRawBuff + wpos, msg.content, msg.clen);
@@ -99,21 +99,27 @@ bool __fastcall WorkThread::onSendMessage(message_t& msg, int error)
     wpos += sizeof(msg.crc16);
     
     sendPos = 0;
+    */
+
+    memcpy(sendRawBuff, msg.stream, msg.len);
     if (error > mpDevCfg->errorThreshold){
         // Write a error message
-        sendRawBuff[error % wpos] = ~sendRawBuff[error % wpos];
-        LogMsg("Write:" + StreamToText(sendRawBuff, wpos));
+        sendRawBuff[error % msg.len] = ~sendRawBuff[error % msg.len];
+        LogMsg("Write(E):" + StreamToText(sendRawBuff, msg.len));
+    }else{
+        LogMsg("Write( ):" + StreamToText(sendRawBuff, msg.len));
     }
-    //LogMsg("Write:" + StreamToText(sendRawBuff, wpos));
-    int sendLen = sendData(sendRawBuff, wpos);
+
+    int sendLen = sendData(sendRawBuff, msg.len);
     return (sendLen == wpos);
 }
 //---------------------------------------------------------------------------
 // Do receive message
-message_t* __fastcall WorkThread::onReceiveMessage(int error)
+RawMsg* __fastcall WorkThread::onReceiveMessage(int error)
 {
     int rvRecv;
     unsigned short rvCRC16;
+    unsigned short usDataCRC16;
     unsigned short head;
     switch(mMsgStatus){
     case RECV_MSG_STATUS_HEAD:
@@ -160,10 +166,12 @@ message_t* __fastcall WorkThread::onReceiveMessage(int error)
         if (rvRecv != mRecvLen - MESSAGE_HEAD_LEN - MESSAGE_LEN_LEN){
             return NULL;
         }
+        usDataCRC16 = *(unsigned short*)(recvRawBuff + mRecvLen - MESSAGE_CRC_LEN);
         //and skip to next step
         receivePos = 0;
         mMsgStatus = RECV_MSG_STATUS_HEAD;
 
+        /*
         // resolve message to struct messgae
         memcpy(&mReceiveMsgBuf, recvRawBuff, offsetof(message_t, content));
         if (mReceiveMsgBuf.clen > MAX_MESSAGE_LEN){
@@ -176,20 +184,28 @@ message_t* __fastcall WorkThread::onReceiveMessage(int error)
         memcpy(&mReceiveMsgBuf.crc16, recvRawBuff +
             mReceiveMsgBuf.len - MESSAGE_CRC_LEN,
             MESSAGE_CRC_LEN);
-
+        */
         if (error > mpDevCfg->errorThreshold){
             // read a error message randomly
-            recvRawBuff[error % mReceiveMsgBuf.len] = ~recvRawBuff[error % mReceiveMsgBuf.len];
-            LogMsg("Write:" + StreamToText(recvRawBuff, mReceiveMsgBuf.len));
+            recvRawBuff[error % mRecvLen] = ~recvRawBuff[error % mRecvLen];
+            LogMsg("Recv(E):" + StreamToText(recvRawBuff, mRecvLen));
+        }else{
+            LogMsg("Recv( ):" + StreamToText(recvRawBuff, mRecvLen));
         }
 
+
         //Success receive data information and check the message
-        rvCRC16 = crc16_cal(recvRawBuff, mReceiveMsgBuf.len - MESSAGE_CRC_LEN);
-        if (rvCRC16 == mReceiveMsgBuf.crc16){
+        rvCRC16 = crc16_cal(recvRawBuff, mRecvLen - MESSAGE_CRC_LEN);
+        if (rvCRC16 == usDataCRC16){
             // Verified success
             bMessageOK = true; // Received a correct message.
         }
-        return &mReceiveMsgBuf;
+
+        RawMsg* msg = (RawMsg*)malloc(sizeof(RawMsg));
+        memset(msg, 0, sizeof(RawMsg));
+        msg->len = mRecvLen;
+        memcpy(msg->stream, recvRawBuff, mRecvLen);
+        return msg;
 
     }
     return NULL;
@@ -197,17 +213,21 @@ message_t* __fastcall WorkThread::onReceiveMessage(int error)
 //---------------------------------------------------------------------------
 void WorkThread::processMessage()
 {
-    message_t* pmsg = onReceiveMessage(getRandRange(1,100));
+    RawMsg* pmsg = onReceiveMessage(getRandRange(1,100));
 
     if (pmsg != NULL){
         rxMsgCnt++;
         // push a message to master
-        Msg* pMasterMsg = new Msg(mpDevCfg->source.c_str(), mpDevCfg->dest.c_str(), pmsg);
+        Msg* pMasterMsg = new Msg(
+                mpDevCfg->source.c_str(),
+                mpDevCfg->dest.c_str(),
+                pmsg->stream, pmsg->len);
         if (mMasterQueue != NULL){
             //LogMsg("-->push Master Queue");
             mMasterQueue->Push(pMasterMsg);
             LogMsg("Rx, Queue:" + IntToStr(mMasterQueue->Count()));
         }
+        delete pmsg;
     }else{
         if (FStatus == WORK_STATUS_CLOSE_WORKING){
             // All data has process finished.
@@ -218,7 +238,7 @@ void WorkThread::processMessage()
     //Exit when client close connection
     if (FStatus != WORK_STATUS_WORKING) return;
     // send message
-    while (!mRawMsgQueue->Empty()){
+    while (!this->Terminated && !mRawMsgQueue->Empty()){
         RawMsg* pmsg = mRawMsgQueue->Pop();
         if (pmsg != NULL){
             txMsgCnt ++;

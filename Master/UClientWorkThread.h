@@ -19,11 +19,16 @@ class ClientWorkThread : public TServerClientThread
         ploop_buff_t _lpbufTx;
 
         unsigned char ucaRecvBuff[DATA_OP_BUF_LEN];
+        unsigned char ucaSendBuff[DATA_OP_BUF_LEN];
         
         void __fastcall ClientExecute(void);
         void LogMsg(AnsiString msg);
+
+        AnsiString FName;
     public:
-        __fastcall ClientWorkThread(TServerClientWinSocket *sock,
+        __fastcall ClientWorkThread(
+            TServerClientWinSocket *sock,
+            AnsiString& name,
             ploop_buff_t lpbufRx, ploop_buff_t lpbufTx,
             TCriticalSection* csBuffer);
         __fastcall ~ClientWorkThread();
