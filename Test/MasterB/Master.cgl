@@ -1,0 +1,33 @@
+Functions called:
+ fflush (4 times)
+ free (7 times)
+ delete (44 times)
+ vsnprintf (24 times)
+ strcat (3 times)
+ strcmp (73 times)
+ snprintf (149 times)
+ new (46 times)
+ memset (65 times)
+ strcpy (49 times)
+ delete[] (4 times)
+ new[] (4 times)
+ atol (1 times)
+ SysReallocMem (203 times)
+ SysFreeMem (7200 times)
+ SysGetMem (7204 times)
+ lstrlenA (1 times)
+ lstrcpynA (4 times)
+ calloc (1 times)
+ strlen (193 times)
+ realloc (1 times)
+ strdup (1 times)
+ malloc (4 times)
+ memcpy (5 times)
+Resource types used:
+ object (46 allocs, 41 max)
+ object array (4 allocs, 3 max)
+ memory block (7211 allocs, 1188 max)
+Modules used:
+ 00400000 03/28/2015 23:39:28
+ D:\Projects\GitHub\PrivateDataRouter\Test\MasterB\Master.exe
+==========================================

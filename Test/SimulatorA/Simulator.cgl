@@ -1,0 +1,33 @@
+Functions called:
+ fflush (4 times)
+ free (7 times)
+ delete (14 times)
+ vsnprintf (24 times)
+ strcat (6 times)
+ strcmp (5874 times)
+ snprintf (17861 times)
+ new (15 times)
+ memset (1270 times)
+ strcpy (6 times)
+ delete[] (5 times)
+ new[] (5 times)
+ atol (1 times)
+ SysReallocMem (2911 times)
+ SysFreeMem (135434 times)
+ SysGetMem (135448 times)
+ lstrlenA (1 times)
+ lstrcpynA (4 times)
+ calloc (1 times)
+ strlen (11836 times)
+ realloc (1 times)
+ strdup (1 times)
+ malloc (4 times)
+ memcpy (9633 times)
+Resource types used:
+ object (15 allocs, 15 max)
+ object array (5 allocs, 4 max)
+ memory block (135455 allocs, 1110 max)
+Modules used:
+ 00400000 03/28/2015 22:55:24
+ D:\Projects\GitHub\PrivateDataRouter\Test\SimulatorA\Simulator.exe
+==========================================

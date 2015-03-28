@@ -24,8 +24,8 @@
 //---------------------------------------------------------------------------
 
 __fastcall SerialWorkThread::SerialWorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name)
-    : WorkThread(pDevCfg, masterQueue, name)
+            const AnsiString& name, Controller* controller)
+    : WorkThread(pDevCfg, name, controller)
 {
     receivePos = 0; //Rest receive position to zero
 }
@@ -39,9 +39,7 @@ void __fastcall SerialWorkThread::onStart()
 {
     try{
         mDevice->Active = true;
-        if (FOnOpenChannel != NULL){
-            FOnOpenChannel(this, true);
-        }
+        StartOK();
         if (OnServerOpen != NULL){
             OnServerOpen(this, true);
         }
@@ -61,6 +59,7 @@ void __fastcall SerialWorkThread::onStop()
 {
     mDevice->Active = false;
     isConnected = false;
+    StopOK();
 }
 //---------------------------------------------------------------------------
 void __fastcall SerialWorkThread::onParameterChange()

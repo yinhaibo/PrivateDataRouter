@@ -11,8 +11,8 @@
 extern LogFileEx logger;
 //---------------------------------------------------------------------------
 ServerWorkThread::ServerWorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name)
-    : WorkThread(pDevCfg, masterQueue, name)
+            const AnsiString& name, Controller* controller)
+    : WorkThread(pDevCfg, name, controller)
 {
     mServer = NULL;
     receivePos = 0; //Rest receive position to zero
@@ -134,10 +134,7 @@ void __fastcall ServerWorkThread::onSocketConnect(System::TObject* Sender,
     LogMsg("Socket connected:" + Socket->RemoteAddress + ", RemotePort:"
         + IntToStr(Socket->RemotePort));
     isConnected = true;
-    if (FOnOpenChannel != NULL){
-        FOnOpenChannel(this, true);
-    }
-    FStatus = WORK_STATUS_WORKING;
+    StartOK();
 }
 void __fastcall ServerWorkThread::onSocketDisconnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
@@ -147,11 +144,8 @@ void __fastcall ServerWorkThread::onSocketDisconnect(System::TObject* Sender,
     LogMsg("Socket disconnected:" + IntToStr(Socket->RemotePort));
     isConnected = false;
     if (mServer != NULL && mServer->Active){
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(this, true);
-        }
+        StopOK();
         currSocketThread = NULL;
-        FStatus = WORK_STATUS_CLOSE_WORKING; // Wait for another client
     }
 }
 void __fastcall ServerWorkThread::onSocketRead(System::TObject* Sender,
@@ -171,9 +165,7 @@ void __fastcall ServerWorkThread::onSocketError(System::TObject* Sender,
         //currSocketThread->WaitFor();
         //delete currSocketThread;
         CloseClientConnection();
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(this, true);
-        }
+        StopOK();
     }
     ErrorCode = 0;
 }

@@ -28,7 +28,8 @@ protected:
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len);
 public:
     __fastcall SerialWorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name);
+            const AnsiString& name,
+            Controller* controller);
     virtual __fastcall ~SerialWorkThread();
 };
 //---------------------------------------------------------------------------

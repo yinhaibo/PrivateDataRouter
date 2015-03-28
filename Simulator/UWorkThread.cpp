@@ -156,6 +156,7 @@ void __fastcall WorkThread::Execute()
                 memcpy(&receiveMsg, pmsg, sizeof(message_t));
                 rxMsgCnt++;
                 if (bMessageOK){
+                    LogMsg(pmsg, "Receive message OK");
                     // There is a response message while their has a same tag field.
                     if (pmsg->tag == mpDevCfg->tag){
                         if (msgStatus == MESSAGE_SEND_MESSAGE)
@@ -200,6 +201,7 @@ void __fastcall WorkThread::Execute()
                             }
                         }
                     }else{
+                        LogMsg(pmsg, "Receive message ERROR");
                         // Resonse message
                         // Just copy that and back it.
                         if (FPeerReady){
@@ -224,6 +226,7 @@ void __fastcall WorkThread::Execute()
             Sleep(10);
         }            
     }
+    LogMsg("Work thread exit...");
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::updateUIEvent(
@@ -271,6 +274,7 @@ bool __fastcall WorkThread::onSendMessage(message_t& msg, int error)
         // Write a error message
         sendRawBuff[error % wpos] = ~sendRawBuff[error % wpos];
     }
+    LogMsg(&msg, "Send message");
     int sendLen = sendData(sendRawBuff, wpos);
     bool isSendOK = (sendLen == wpos);
     
@@ -440,9 +444,16 @@ void WorkThread::LogMsg(AnsiString msg)
     //logger.Log(FName + "[" + IntToStr(this->ThreadID) + "]\t" + msg);
 }
 //---------------------------------------------------------------------------
+void WorkThread::LogMsg(message_t* pmsg, AnsiString text)
+{
+    char buffer[200];
+    snprintf(buffer, 200, "[%s]Tag:%u, Seq:%u, CRC:%04x -- %s", FName.c_str(),
+        pmsg->tag, pmsg->seq, pmsg->crc16,
+        text.c_str());
+    logger.Log(buffer);
+}
 
-
-
+//---------------------------------------------------------------------------
 
 void __fastcall WorkThreadMessage::SetErrorMsg(AnsiString value)
 {

@@ -54,7 +54,7 @@ public:
     AnsiString eofMessage;  // EOF Message for endinag a message transmission.
 
     // For count
-    unsigned char sendSeq;
+    unsigned int sendSeq;
     unsigned long sendTick;
     // Message count, one success message including send a message and eof message
     // and make sure the message have transfer correctly.
@@ -107,7 +107,7 @@ typedef struct _message_t{
     unsigned short len;             // Message length
     unsigned char  tag;             // Message tag, for indentified message which is
                                     // sending by self.
-    unsigned char  seq;             // Sequence of message
+    unsigned int   seq;             // Sequence of message
     timestamp_t   timestamp;        // Timestamp of message
     unsigned char clen;             // Message content length
     char content[MAX_MESSAGE_LEN];  // Message content

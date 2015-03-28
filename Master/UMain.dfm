@@ -1,8 +1,8 @@
 object FMain: TFMain
-  Left = 244
-  Top = 165
+  Left = 273
+  Top = 116
   Width = 870
-  Height = 500
+  Height = 602
   Caption = 'Master'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -54,109 +54,221 @@ object FMain: TFMain
     Left = 0
     Top = 324
     Width = 854
-    Height = 117
+    Height = 219
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Master'
     TabOrder = 1
-    object lblPeerIP: TLabel
-      Left = 112
-      Top = 16
-      Width = 100
+    object lblRxBytes: TLabel
+      Left = 26
+      Top = 174
+      Width = 48
       Height = 13
-      Caption = 'Remote Master Host:'
+      Caption = 'Rx(Bytes):'
     end
-    object lblPeerPort: TLabel
-      Left = 344
-      Top = 16
-      Width = 96
+    object RxBytes: TLabel
+      Left = 26
+      Top = 195
+      Width = 47
       Height = 13
-      Caption = 'Master Service Port:'
+      Caption = 'Tx(Bytes):'
     end
-    object lblMasterPort: TLabel
+    object lblRxRate1: TLabel
+      Left = 181
+      Top = 175
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object lblTxRate1: TLabel
+      Left = 181
+      Top = 199
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object lblConnCntCH1: TLabel
+      Left = 117
+      Top = 150
+      Width = 13
+      Height = 13
+      Alignment = taCenter
+      AutoSize = False
+      Caption = '0'
+      Color = clMedGray
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWhite
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblTxRate2: TLabel
+      Left = 341
+      Top = 199
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object lblRxRate2: TLabel
+      Left = 341
+      Top = 175
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object lblTxRate3: TLabel
+      Left = 493
+      Top = 199
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object lblRxRate3: TLabel
+      Left = 493
+      Top = 175
+      Width = 42
+      Height = 13
+      Caption = '0Bytes/s'
+    end
+    object Shape1: TShape
+      Left = 24
+      Top = 168
+      Width = 505
+      Height = -1
+    end
+    object lblCh1: TLabel
+      Left = 90
+      Top = 150
+      Width = 21
+      Height = 13
+      Caption = 'CH1'
+    end
+    object lblCH2: TLabel
+      Left = 266
+      Top = 150
+      Width = 21
+      Height = 13
+      Caption = 'CH2'
+    end
+    object lblCH3: TLabel
+      Left = 410
+      Top = 150
+      Width = 21
+      Height = 13
+      Caption = 'CH3'
+    end
+    object lblConnCntCH2: TLabel
+      Left = 293
+      Top = 150
+      Width = 13
+      Height = 13
+      Alignment = taCenter
+      AutoSize = False
+      Caption = ' 0'
+      Color = clMedGray
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWhite
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentColor = False
+      ParentFont = False
+    end
+    object lblConnCntCH3: TLabel
+      Left = 437
+      Top = 150
+      Width = 13
+      Height = 13
+      Alignment = taCenter
+      AutoSize = False
+      Caption = ' 0'
+      Color = clMedGray
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWhite
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      Font.Style = []
+      ParentColor = False
+      ParentFont = False
+    end
+    object ShapeCH11: TShape
       Left = 136
-      Top = 40
-      Width = 57
+      Top = 149
+      Width = 13
       Height = 13
-      Caption = 'Master Port:'
-      Enabled = False
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object lblPeerClientIP: TLabel
-      Left = 288
-      Top = 40
-      Width = 96
+    object ShapeCH12: TShape
+      Left = 152
+      Top = 149
+      Width = 13
       Height = 13
-      Caption = 'Remote Host Name:'
-      Enabled = False
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object lblConnectStatus: TLabel
-      Left = 600
-      Top = 16
-      Width = 97
+    object ShapeCH13: TShape
+      Left = 168
+      Top = 149
+      Width = 13
       Height = 13
-      Caption = 'Wait to connect.......'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object lblListenStatus: TLabel
-      Left = 600
-      Top = 43
-      Width = 82
+    object ShapeCH21: TShape
+      Left = 308
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'Wait to listen.......'
-      Enabled = False
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object Label7: TLabel
-      Left = 16
-      Top = 72
-      Width = 78
+    object ShapeCH22: TShape
+      Left = 324
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'Traffic Statistics:'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object Label8: TLabel
-      Left = 104
-      Top = 72
-      Width = 16
+    object ShapeCH23: TShape
+      Left = 340
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'Rx:'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object Label9: TLabel
-      Left = 104
-      Top = 93
-      Width = 15
+    object ShapeCH31: TShape
+      Left = 452
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'Tx:'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object Label10: TLabel
-      Left = 221
-      Top = 73
-      Width = 25
+    object ShapeCH32: TShape
+      Left = 468
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'bytes'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
-    object Label11: TLabel
-      Left = 221
-      Top = 95
-      Width = 25
+    object ShapeCH33: TShape
+      Left = 484
+      Top = 150
+      Width = 13
       Height = 13
-      Caption = 'bytes'
-    end
-    object lblRxRate: TLabel
-      Left = 261
-      Top = 71
-      Width = 42
-      Height = 13
-      Caption = '0Bytes/s'
-    end
-    object lblTxRate: TLabel
-      Left = 261
-      Top = 95
-      Width = 42
-      Height = 13
-      Caption = '0Bytes/s'
+      Brush.Color = clOlive
+      Shape = stCircle
     end
     object rbMasterClientMode: TRadioButton
       Left = 8
       Top = 16
-      Width = 113
+      Width = 81
       Height = 17
       Caption = 'Client Mode'
       Checked = True
@@ -165,149 +277,381 @@ object FMain: TFMain
       OnClick = rbMasterClientModeClick
     end
     object rbMasterServerMode: TRadioButton
-      Left = 8
-      Top = 40
-      Width = 113
+      Left = 320
+      Top = 16
+      Width = 81
       Height = 17
       Caption = 'Server Mode'
       TabOrder = 1
       OnClick = rbMasterServerModeClick
     end
-    object txtPeerIP: TEdit
-      Left = 216
-      Top = 12
-      Width = 121
+    object txtRxBytesCH1: TEdit
+      Left = 88
+      Top = 172
+      Width = 89
       Height = 21
       TabOrder = 2
+      Text = '0'
     end
-    object txtPeerPort: TEdit
-      Left = 440
-      Top = 12
-      Width = 49
+    object txtTxBytesCH1: TEdit
+      Left = 88
+      Top = 194
+      Width = 89
       Height = 21
       TabOrder = 3
+      Text = '0'
     end
-    object txtMasterPort: TEdit
-      Left = 216
-      Top = 36
-      Width = 49
-      Height = 21
-      Enabled = False
+    object btnClear: TButton
+      Left = 568
+      Top = 189
+      Width = 75
+      Height = 25
+      Caption = '&Clear'
       TabOrder = 4
+      OnClick = btnClearClick
     end
-    object txtPeerClientIP: TEdit
-      Left = 392
-      Top = 36
-      Width = 97
+    object txtRxBytesCH2: TEdit
+      Left = 248
+      Top = 172
+      Width = 89
       Height = 21
-      Enabled = False
       TabOrder = 5
+      Text = '0'
     end
-    object txtRxBytes: TEdit
-      Left = 128
-      Top = 68
+    object txtTxBytesCH2: TEdit
+      Left = 248
+      Top = 194
       Width = 89
       Height = 21
       TabOrder = 6
       Text = '0'
     end
-    object txtTxBytes: TEdit
-      Left = 128
-      Top = 90
+    object txtRxBytesCH3: TEdit
+      Left = 400
+      Top = 172
       Width = 89
       Height = 21
       TabOrder = 7
       Text = '0'
     end
-    object btnOpen: TBitBtn
-      Left = 512
-      Top = 36
-      Width = 75
-      Height = 25
-      Caption = '&Listen'
+    object txtTxBytesCH3: TEdit
+      Left = 400
+      Top = 194
+      Width = 89
+      Height = 21
       TabOrder = 8
-      OnClick = btnOpenClick
-      Glyph.Data = {
-        36030000424D3603000000000000360000002800000010000000100000000100
-        18000000000000030000120B0000120B00000000000000000000FFFFFFFFFFFF
-        FEFFFFFFFFFFFFFFFFFAF9FAF3E0D1EED1B4EFD1B4F3E1D2FAF9FBFFFFFFFFFF
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBF9FAEBC49BEBA03FF1920FF5
-        8E00F48B00F08A00E8952BE9BD91FAFAFBFFFFFFFFFFFFFFFFFFFEFEFEFFFFFF
-        F8EFE9E7AC66F7A323FFB641FFC56FFFCB82FFC97EFFBE60FFA51DF58A00E399
-        45F6EDE8FFFFFFFFFFFFFFFFFFFCFAFAEBB573FCB540FFD28BFEE3C6FFE8D3FF
-        E5CCFEE2C7FEE1C7FDDDBBFFC169FB9300E39C49FBF9FBFFFFFFFFFFFFF1D3B3
-        F9BA55FEDCA2FEEEDDFDE8D2F3CDABF9DDC2FFECD7FEE5C9FEE4CAFDE6D2FFC9
-        78F69303EBC49BFFFFFFFCFAF9F3C380FFD88EFDF4EAFEF9F1F1CBA5EA8B12E7
-        932FEDC095FDEDDCFFEFDDFDE9D3FEEAD4FFB745ECA445FBF9FAF8EDE1F8C97B
-        FFEDC9FEFCFCFFFEFDF1CCA4FCAB2BFEAB23F09519E7A052F3D4BAFEF2E4FEF1
-        E8FFD697F4A22CF6E6D8F8E8D3FBD48AFFF7E3FFFEFFFFFFFFF6D8B7FBB94FFF
-        BD4DFFB83FFDAB29EC9525F3D3B6FFFBF8FFE5BEF7AB37F3DCC2F9EAD7FCDA95
-        FFF9E7FEFFFFFFFFFFF9E0C4FCC86DFFCA6BFEC660FEBC4DF2A742F4DBC3FFFF
-        FFFFEDCDF8B44AF5DDC6FBF1E7FADDA1FFF7DEFEFFFFFFFFFFFBE7CFFCD587FF
-        D682FACA75F5CA93F8EADEFFFFFFFEFFFFFFEAC2F7BB5CF8EADDFDFBFAFAE2B4
-        FFF1C7FFFEFFFEFFFFFDF2E1FEDE9FFDDEA8FBEBD7FEFFFFFFFFFFFEFFFFFFFE
-        FEFEDB97F5C682FDFBFAFFFFFFFCEBD4FDEAB5FEF8E4FEFFFFFEFEFFFEF7EFFE
-        FCFBFFFFFFFFFEFEFFFEFFFEFFFFFEF0D1FBCF7CF6DEBFFFFFFFFEFFFFFEFDFB
-        FBE8C0FEF1C0FEFAE5FEFEFEFEFFFFFEFFFFFEFEFFFEFFFFFEFDFCFEF3D6FEDE
-        96F6D3A1FDFBFAFFFFFFFFFFFFFFFFFFFDF9F4FDEBC5FDF1BFFEF7D3FEFAE4FE
-        FAECFFFAEBFEF7DFFEEFC2FDE3A1F8DAACFCF5F1FFFFFFFEFFFFFEFFFFFFFFFF
-        FFFFFFFEFDFBFEF1DAFEEFC7FEF0C1FDEEBDFDEDB9FDE9B5FDE7B7FBEBD0FEFC
-        FBFFFFFFFEFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFDFBFEF8EEFE
-        F6E5FDF5E5FDF7ECFFFCFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
+      Text = '0'
     end
-    object btnConnect: TBitBtn
-      Left = 512
-      Top = 8
-      Width = 75
-      Height = 25
-      Caption = '&Connect'
+    object gboxServerMode: TGroupBox
+      Left = 320
+      Top = 33
+      Width = 529
+      Height = 104
+      Caption = 'Server Mode'
       TabOrder = 9
-      OnClick = btnConnectClick
-      Glyph.Data = {
-        36030000424D3603000000000000360000002800000010000000100000000100
-        18000000000000030000120B0000120B00000000000000000000FFFFFFFFFFFF
-        FEFFFFFFFFFFFFFFFFFAF9FAF3E0D1EED1B4EFD1B4F3E1D2FAF9FBFFFFFFFFFF
-        FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBF9FAEBC49BEBA03FF1920FF5
-        8E00F48B00F08A00E8952BE9BD91FAFAFBFFFFFFFFFFFFFFFFFFFEFEFEFFFFFF
-        F8EFE9E7AC66F7A323FFB641FFC56FFFCB82FFC97EFFBE60FFA51DF58A00E399
-        45F6EDE8FFFFFFFFFFFFFFFFFFFCFAFAEBB573FCB540FFD28BFEE3C6FFE8D3FF
-        E5CCFEE2C7FEE1C7FDDDBBFFC169FB9300E39C49FBF9FBFFFFFFFFFFFFF1D3B3
-        F9BA55FEDCA2FEEEDDFDE8D2F3CDABF9DDC2FFECD7FEE5C9FEE4CAFDE6D2FFC9
-        78F69303EBC49BFFFFFFFCFAF9F3C380FFD88EFDF4EAFEF9F1F1CBA5EA8B12E7
-        932FEDC095FDEDDCFFEFDDFDE9D3FEEAD4FFB745ECA445FBF9FAF8EDE1F8C97B
-        FFEDC9FEFCFCFFFEFDF1CCA4FCAB2BFEAB23F09519E7A052F3D4BAFEF2E4FEF1
-        E8FFD697F4A22CF6E6D8F8E8D3FBD48AFFF7E3FFFEFFFFFFFFF6D8B7FBB94FFF
-        BD4DFFB83FFDAB29EC9525F3D3B6FFFBF8FFE5BEF7AB37F3DCC2F9EAD7FCDA95
-        FFF9E7FEFFFFFFFFFFF9E0C4FCC86DFFCA6BFEC660FEBC4DF2A742F4DBC3FFFF
-        FFFFEDCDF8B44AF5DDC6FBF1E7FADDA1FFF7DEFEFFFFFFFFFFFBE7CFFCD587FF
-        D682FACA75F5CA93F8EADEFFFFFFFEFFFFFFEAC2F7BB5CF8EADDFDFBFAFAE2B4
-        FFF1C7FFFEFFFEFFFFFDF2E1FEDE9FFDDEA8FBEBD7FEFFFFFFFFFFFEFFFFFFFE
-        FEFEDB97F5C682FDFBFAFFFFFFFCEBD4FDEAB5FEF8E4FEFFFFFEFEFFFEF7EFFE
-        FCFBFFFFFFFFFEFEFFFEFFFEFFFFFEF0D1FBCF7CF6DEBFFFFFFFFEFFFFFEFDFB
-        FBE8C0FEF1C0FEFAE5FEFEFEFEFFFFFEFFFFFEFEFFFEFFFFFEFDFCFEF3D6FEDE
-        96F6D3A1FDFBFAFFFFFFFFFFFFFFFFFFFDF9F4FDEBC5FDF1BFFEF7D3FEFAE4FE
-        FAECFFFAEBFEF7DFFEEFC2FDE3A1F8DAACFCF5F1FFFFFFFEFFFFFEFFFFFFFFFF
-        FFFFFFFEFDFBFEF1DAFEEFC7FEF0C1FDEEBDFDEDB9FDE9B5FDE7B7FBEBD0FEFC
-        FBFFFFFFFEFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFDFBFEF8EEFE
-        F6E5FDF5E5FDF7ECFFFCFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
+      object lblChanneControl: TLabel
+        Left = 16
+        Top = 44
+        Width = 78
+        Height = 13
+        Caption = 'Channel Control:'
+      end
+      object lblMasterPort: TLabel
+        Left = 8
+        Top = 18
+        Width = 81
+        Height = 13
+        Alignment = taRightJustify
+        AutoSize = False
+        Caption = 'Master Port:'
+        Enabled = False
+      end
+      object lblListenStatus: TLabel
+        Left = 288
+        Top = 14
+        Width = 82
+        Height = 13
+        Caption = 'Wait to listen.......'
+        Enabled = False
+      end
+      object Label1: TLabel
+        Left = 95
+        Top = 44
+        Width = 21
+        Height = 13
+        AutoSize = False
+        Caption = 'CH1'
+        Color = clBlue
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWhite
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        ParentColor = False
+        ParentFont = False
+      end
+      object Label2: TLabel
+        Left = 239
+        Top = 44
+        Width = 21
+        Height = 13
+        AutoSize = False
+        Caption = 'CH2'
+        Color = clBlue
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWhite
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        ParentColor = False
+        ParentFont = False
+      end
+      object Label3: TLabel
+        Left = 375
+        Top = 44
+        Width = 21
+        Height = 13
+        AutoSize = False
+        Caption = 'CH3'
+        Color = clBlue
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWhite
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        Font.Style = []
+        ParentColor = False
+        ParentFont = False
+      end
+      object cboErrorCH1: TComboBox
+        Left = 126
+        Top = 40
+        Width = 80
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 0
+        Text = 'No Error(0)'
+        OnChange = cboErrorCH1Change
+        Items.Strings = (
+          'No Error(0)'
+          'Uniform(1/X)'
+          'Poisson(%)')
+      end
+      object txtMasterPort: TEdit
+        Left = 96
+        Top = 12
+        Width = 97
+        Height = 21
+        Enabled = False
+        TabOrder = 1
+      end
+      object cboErrorCH2: TComboBox
+        Left = 270
+        Top = 40
+        Width = 80
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 2
+        Text = 'No Error'
+        OnChange = cboErrorCH2Change
+        Items.Strings = (
+          'No Error(0)'
+          'Uniform(1/X)'
+          'Poisson(%)')
+      end
+      object cboErrorCH3: TComboBox
+        Left = 406
+        Top = 40
+        Width = 80
+        Height = 21
+        ItemHeight = 13
+        TabOrder = 3
+        Text = 'No Error'
+        OnChange = cboErrorCH3Change
+        Items.Strings = (
+          'No Error(0)'
+          'Uniform(1/X)'
+          'Poisson(%)')
+      end
+      object btnOpen: TBitBtn
+        Left = 200
+        Top = 8
+        Width = 83
+        Height = 25
+        Caption = '&Listen'
+        TabOrder = 4
+        OnClick = btnOpenClick
+        Glyph.Data = {
+          36030000424D3603000000000000360000002800000010000000100000000100
+          18000000000000030000120B0000120B00000000000000000000FFFFFFFFFFFF
+          FEFFFFFFFFFFFFFFFFFAF9FAF3E0D1EED1B4EFD1B4F3E1D2FAF9FBFFFFFFFFFF
+          FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBF9FAEBC49BEBA03FF1920FF5
+          8E00F48B00F08A00E8952BE9BD91FAFAFBFFFFFFFFFFFFFFFFFFFEFEFEFFFFFF
+          F8EFE9E7AC66F7A323FFB641FFC56FFFCB82FFC97EFFBE60FFA51DF58A00E399
+          45F6EDE8FFFFFFFFFFFFFFFFFFFCFAFAEBB573FCB540FFD28BFEE3C6FFE8D3FF
+          E5CCFEE2C7FEE1C7FDDDBBFFC169FB9300E39C49FBF9FBFFFFFFFFFFFFF1D3B3
+          F9BA55FEDCA2FEEEDDFDE8D2F3CDABF9DDC2FFECD7FEE5C9FEE4CAFDE6D2FFC9
+          78F69303EBC49BFFFFFFFCFAF9F3C380FFD88EFDF4EAFEF9F1F1CBA5EA8B12E7
+          932FEDC095FDEDDCFFEFDDFDE9D3FEEAD4FFB745ECA445FBF9FAF8EDE1F8C97B
+          FFEDC9FEFCFCFFFEFDF1CCA4FCAB2BFEAB23F09519E7A052F3D4BAFEF2E4FEF1
+          E8FFD697F4A22CF6E6D8F8E8D3FBD48AFFF7E3FFFEFFFFFFFFF6D8B7FBB94FFF
+          BD4DFFB83FFDAB29EC9525F3D3B6FFFBF8FFE5BEF7AB37F3DCC2F9EAD7FCDA95
+          FFF9E7FEFFFFFFFFFFF9E0C4FCC86DFFCA6BFEC660FEBC4DF2A742F4DBC3FFFF
+          FFFFEDCDF8B44AF5DDC6FBF1E7FADDA1FFF7DEFEFFFFFFFFFFFBE7CFFCD587FF
+          D682FACA75F5CA93F8EADEFFFFFFFEFFFFFFEAC2F7BB5CF8EADDFDFBFAFAE2B4
+          FFF1C7FFFEFFFEFFFFFDF2E1FEDE9FFDDEA8FBEBD7FEFFFFFFFFFFFEFFFFFFFE
+          FEFEDB97F5C682FDFBFAFFFFFFFCEBD4FDEAB5FEF8E4FEFFFFFEFEFFFEF7EFFE
+          FCFBFFFFFFFFFEFEFFFEFFFEFFFFFEF0D1FBCF7CF6DEBFFFFFFFFEFFFFFEFDFB
+          FBE8C0FEF1C0FEFAE5FEFEFEFEFFFFFEFFFFFEFEFFFEFFFFFEFDFCFEF3D6FEDE
+          96F6D3A1FDFBFAFFFFFFFFFFFFFFFFFFFDF9F4FDEBC5FDF1BFFEF7D3FEFAE4FE
+          FAECFFFAEBFEF7DFFEEFC2FDE3A1F8DAACFCF5F1FFFFFFFEFFFFFEFFFFFFFFFF
+          FFFFFFFEFDFBFEF1DAFEEFC7FEF0C1FDEEBDFDEDB9FDE9B5FDE7B7FBEBD0FEFC
+          FBFFFFFFFEFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFDFBFEF8EEFE
+          F6E5FDF5E5FDF7ECFFFCFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
+      end
+      object cboErrorValCH1: TComboBox
+        Left = 96
+        Top = 64
+        Width = 110
+        Height = 21
+        Hint = 
+          'To control error rate while channel send out message. In Uniform' +
+          ' mode, the rate control by  how many message will contains an er' +
+          'ror. In possion mode, error rate control by a precent rate, the ' +
+          'rate depends a possion curve.'
+        ItemHeight = 13
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+        Text = 'cboErrorValCH1'
+        OnChange = cboErrorValCH1Change
+      end
+      object cboErrorValCH2: TComboBox
+        Left = 240
+        Top = 64
+        Width = 110
+        Height = 21
+        Hint = 
+          'To control error rate while channel send out message. In Uniform' +
+          ' mode, the rate control by  how many message will contains an er' +
+          'ror. In possion mode, error rate control by a precent rate, the ' +
+          'rate depends a possion curve.'
+        ItemHeight = 13
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
+        Text = 'cboErrorValCH2'
+        OnChange = cboErrorValCH2Change
+      end
+      object cboErrorValCH3: TComboBox
+        Left = 376
+        Top = 64
+        Width = 110
+        Height = 21
+        Hint = 
+          'To control error rate while channel send out message. In Uniform' +
+          ' mode, the rate control by  how many message will contains an er' +
+          'ror. In possion mode, error rate control by a precent rate, the ' +
+          'rate depends a possion curve.'
+        ItemHeight = 13
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 7
+        Text = 'cboErrorValCH1'
+        OnChange = cboErrorValCH3Change
+      end
     end
-    object chkAutoReconn: TCheckBox
-      Left = 736
-      Top = 16
-      Width = 97
-      Height = 17
-      Caption = '&Auto reconnect.'
+    object GroupBox2: TGroupBox
+      Left = 4
+      Top = 31
+      Width = 309
+      Height = 106
+      Caption = 'Client Mode'
       TabOrder = 10
-      OnClick = chkAutoReconnClick
-    end
-    object btnClear: TButton
-      Left = 344
-      Top = 88
-      Width = 75
-      Height = 25
-      Caption = '&Clear'
-      TabOrder = 11
-      OnClick = btnClearClick
+      object lblPeerIP: TLabel
+        Left = 8
+        Top = 24
+        Width = 108
+        Height = 13
+        Alignment = taRightJustify
+        AutoSize = False
+        Caption = 'Remote Master Host:'
+      end
+      object lblPeerPort: TLabel
+        Left = 8
+        Top = 48
+        Width = 104
+        Height = 13
+        Alignment = taRightJustify
+        AutoSize = False
+        Caption = 'Master Service Port:'
+      end
+      object lblConnectStatus: TLabel
+        Left = 8
+        Top = 72
+        Width = 265
+        Height = 13
+        AutoSize = False
+        Caption = 'Wait to connect.......'
+      end
+      object txtPeerIP: TEdit
+        Left = 120
+        Top = 20
+        Width = 89
+        Height = 21
+        TabOrder = 0
+      end
+      object txtPeerPort: TEdit
+        Left = 120
+        Top = 44
+        Width = 73
+        Height = 21
+        TabOrder = 1
+      end
+      object btnConnect: TBitBtn
+        Left = 214
+        Top = 16
+        Width = 89
+        Height = 25
+        Caption = '&Start'
+        TabOrder = 2
+        OnClick = btnConnectClick
+        Glyph.Data = {
+          36030000424D3603000000000000360000002800000010000000100000000100
+          18000000000000030000120B0000120B00000000000000000000FFFFFFFFFFFF
+          FEFFFFFFFFFFFFFFFFFAF9FAF3E0D1EED1B4EFD1B4F3E1D2FAF9FBFFFFFFFFFF
+          FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBF9FAEBC49BEBA03FF1920FF5
+          8E00F48B00F08A00E8952BE9BD91FAFAFBFFFFFFFFFFFFFFFFFFFEFEFEFFFFFF
+          F8EFE9E7AC66F7A323FFB641FFC56FFFCB82FFC97EFFBE60FFA51DF58A00E399
+          45F6EDE8FFFFFFFFFFFFFFFFFFFCFAFAEBB573FCB540FFD28BFEE3C6FFE8D3FF
+          E5CCFEE2C7FEE1C7FDDDBBFFC169FB9300E39C49FBF9FBFFFFFFFFFFFFF1D3B3
+          F9BA55FEDCA2FEEEDDFDE8D2F3CDABF9DDC2FFECD7FEE5C9FEE4CAFDE6D2FFC9
+          78F69303EBC49BFFFFFFFCFAF9F3C380FFD88EFDF4EAFEF9F1F1CBA5EA8B12E7
+          932FEDC095FDEDDCFFEFDDFDE9D3FEEAD4FFB745ECA445FBF9FAF8EDE1F8C97B
+          FFEDC9FEFCFCFFFEFDF1CCA4FCAB2BFEAB23F09519E7A052F3D4BAFEF2E4FEF1
+          E8FFD697F4A22CF6E6D8F8E8D3FBD48AFFF7E3FFFEFFFFFFFFF6D8B7FBB94FFF
+          BD4DFFB83FFDAB29EC9525F3D3B6FFFBF8FFE5BEF7AB37F3DCC2F9EAD7FCDA95
+          FFF9E7FEFFFFFFFFFFF9E0C4FCC86DFFCA6BFEC660FEBC4DF2A742F4DBC3FFFF
+          FFFFEDCDF8B44AF5DDC6FBF1E7FADDA1FFF7DEFEFFFFFFFFFFFBE7CFFCD587FF
+          D682FACA75F5CA93F8EADEFFFFFFFEFFFFFFEAC2F7BB5CF8EADDFDFBFAFAE2B4
+          FFF1C7FFFEFFFEFFFFFDF2E1FEDE9FFDDEA8FBEBD7FEFFFFFFFFFFFEFFFFFFFE
+          FEFEDB97F5C682FDFBFAFFFFFFFCEBD4FDEAB5FEF8E4FEFFFFFEFEFFFEF7EFFE
+          FCFBFFFFFFFFFEFEFFFEFFFEFFFFFEF0D1FBCF7CF6DEBFFFFFFFFEFFFFFEFDFB
+          FBE8C0FEF1C0FEFAE5FEFEFEFEFFFFFEFFFFFEFEFFFEFFFFFEFDFCFEF3D6FEDE
+          96F6D3A1FDFBFAFFFFFFFFFFFFFFFFFFFDF9F4FDEBC5FDF1BFFEF7D3FEFAE4FE
+          FAECFFFAEBFEF7DFFEEFC2FDE3A1F8DAACFCF5F1FFFFFFFEFFFFFEFFFFFFFFFF
+          FFFFFFFEFDFBFEF1DAFEEFC7FEF0C1FDEEBDFDEDB9FDE9B5FDE7B7FBEBD0FEFC
+          FBFFFFFFFEFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFDFBFEF8EEFE
+          F6E5FDF5E5FDF7ECFFFCFBFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
+      end
+      object chkAutoReconn: TCheckBox
+        Left = 200
+        Top = 48
+        Width = 97
+        Height = 17
+        Caption = '&Auto reconnect.'
+        TabOrder = 3
+        OnClick = chkAutoReconnClick
+      end
     end
   end
   object mnuMain: TMainMenu

@@ -29,10 +29,11 @@ extern LogFileEx logger;
 //---------------------------------------------------------------------------
 
 __fastcall WorkThread::WorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name)
-    : TThread(true), mpDevCfg(pDevCfg), mMasterQueue(masterQueue), FName(name)
+            const AnsiString& name, Controller* controller)
+    : TThread(true), mpDevCfg(pDevCfg), FName(name), FController(controller)
 {
     errorMsgPerMsg = -1;
+    FPrevMsgSeq = 0;
     respMsgCnt = 0;
 
     lastReportTick = 0;
@@ -42,6 +43,12 @@ __fastcall WorkThread::WorkThread(const device_config_t* pDevCfg,
     FSeed = 100;
 
     isConnected = false;
+    FLocalMessage = false;
+
+    //Create channel from controller (No priority)
+    AnsiString alias = pDevCfg->source;
+    // Inner channel have maxinum priority
+    FChannel = FController->registerChannel(alias, this, 0x7FFFFFFF);
     
     mRawMsgQueue = new RawMsgQueue();
 
@@ -64,6 +71,7 @@ __fastcall WorkThread::~WorkThread()
     if (mRawMsgQueue){
         delete mRawMsgQueue;
     }
+    delete FPrevMsg;
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Start()
@@ -83,6 +91,28 @@ void __fastcall WorkThread::Stop()
         FStatus = WORK_STATUS_STOP;
     //}
 }
+void __fastcall WorkThread::StartOK()
+{
+    if (FOnOpenChannel != NULL){
+        FOnOpenChannel(this, true);
+    }
+    FStatus = WORK_STATUS_WORKING;
+    if (FChannel != NULL){
+        FChannel->Open();
+    }
+}
+void __fastcall WorkThread::StopOK()
+{
+    if (FOnCloseChannel != NULL){
+        FOnCloseChannel(this, true);
+    }
+    FStatus = WORK_STATUS_CLOSE_WORKING; // Wait for another client
+        
+    if (FChannel != NULL){
+        FChannel->Close();
+    }
+}
+
 //---------------------------------------------------------------------------
 // Do send message
 bool __fastcall WorkThread::onSendMessage(RawMsg& msg, int error)
@@ -102,14 +132,14 @@ bool __fastcall WorkThread::onSendMessage(RawMsg& msg, int error)
     */
 
     memcpy(sendRawBuff, msg.stream, msg.len);
-    if (error > mpDevCfg->errorThreshold){
+    /*if (error > mpDevCfg->errorThreshold){
         // Write a error message
         sendRawBuff[error % msg.len] = ~sendRawBuff[error % msg.len];
         LogMsg("Write(E):" + StreamToText(sendRawBuff, msg.len));
     }else{
         LogMsg("Write( ):" + StreamToText(sendRawBuff, msg.len));
-    }
-
+    }*/
+    LogMsg("Write:" + StreamToText(sendRawBuff, msg.len));
     int sendLen = sendData(sendRawBuff, msg.len);
     return (sendLen == wpos);
 }
@@ -185,23 +215,30 @@ RawMsg* __fastcall WorkThread::onReceiveMessage(int error)
             mReceiveMsgBuf.len - MESSAGE_CRC_LEN,
             MESSAGE_CRC_LEN);
         */
-        if (error > mpDevCfg->errorThreshold){
+        /*if (error > mpDevCfg->errorThreshold){
             // read a error message randomly
             recvRawBuff[error % mRecvLen] = ~recvRawBuff[error % mRecvLen];
             LogMsg("Recv(E):" + StreamToText(recvRawBuff, mRecvLen));
         }else{
             LogMsg("Recv( ):" + StreamToText(recvRawBuff, mRecvLen));
-        }
+        }*/
 
-
+        LogMsg("Recv:" + StreamToText(recvRawBuff, mRecvLen));
         //Success receive data information and check the message
         rvCRC16 = crc16_cal(recvRawBuff, mRecvLen - MESSAGE_CRC_LEN);
         if (rvCRC16 == usDataCRC16){
             // Verified success
             bMessageOK = true; // Received a correct message.
+
+            if (((message_t*)recvRawBuff)->tag == mMessage.tag){
+                FLocalMessage = true;
+            }else{
+                FLocalMessage = false;
+            }
+            FCurrentMsgSeq = ((message_t*)recvRawBuff)->seq;
         }
 
-        RawMsg* msg = (RawMsg*)malloc(sizeof(RawMsg));
+        RawMsg* msg = new RawMsg();//(RawMsg*)malloc(sizeof(RawMsg));
         memset(msg, 0, sizeof(RawMsg));
         msg->len = mRecvLen;
         memcpy(msg->stream, recvRawBuff, mRecvLen);
@@ -217,15 +254,35 @@ void WorkThread::processMessage()
 
     if (pmsg != NULL){
         rxMsgCnt++;
-        // push a message to master
-        Msg* pMasterMsg = new Msg(
-                mpDevCfg->source.c_str(),
-                mpDevCfg->dest.c_str(),
-                pmsg->stream, pmsg->len);
-        if (mMasterQueue != NULL){
-            //LogMsg("-->push Master Queue");
-            mMasterQueue->Push(pMasterMsg);
-            LogMsg("Rx, Queue:" + IntToStr(mMasterQueue->Count()));
+        if (bMessageOK){
+            if (FLocalMessage && FPrevMsgSeq != FCurrentMsgSeq){
+                FPrevMsgSeq = FCurrentMsgSeq;
+                delete FPrevMsg;
+                LogMsg(*pmsg, "Receive a new local message, buffer and push to master");
+                if (FController != NULL){
+                    // push a message to master
+                    Msg* msg = new Msg(
+                            mpDevCfg->source.c_str(),
+                            mpDevCfg->dest.c_str(),
+                            pmsg->stream, pmsg->len);
+                    FPrevMsg = new Msg(*msg);
+                    LogMsg("dispatch message to master");
+                    FController->dispatchMsg(FChannel, msg);
+                }
+            }else{
+                LogMsg(*pmsg, "Receive a new message, push to master");
+                //duplicate message, push to master
+                if (FController != NULL){
+                    Msg* msg = new Msg(
+                        mpDevCfg->source.c_str(),
+                        mpDevCfg->dest.c_str(),
+                        pmsg->stream, pmsg->len);
+                    FController->dispatchMsg(FChannel, msg);
+                }
+            }
+        }else{
+            // error message, just wait a normal message
+
         }
         delete pmsg;
     }else{
@@ -243,6 +300,7 @@ void WorkThread::processMessage()
         if (pmsg != NULL){
             txMsgCnt ++;
             LogMsg("Tx, Queue:" + IntToStr(mRawMsgQueue->Count()));
+            LogMsg(*pmsg, "push to simulator");
             onSendMessage(*pmsg, getRandRange(1,100));
             delete pmsg;
         }
@@ -327,20 +385,49 @@ void WorkThread::LogMsg(AnsiString msg)
     logger.Log(FName + "[" + IntToStr(this->ThreadID) + ","
         + IntToStr(GetCurrentThreadId()) + "]\t" + msg);
 }
+//---------------------------------------------------------------------------
+void WorkThread::LogMsg(RawMsg& msg, AnsiString text)
+{
+    char buffer[200];
+    message_t* pmsgstruct = (message_t*)msg.stream;
+    unsigned short crc = *(unsigned short*)(msg.stream + msg.len - 2);
+    snprintf(buffer, 200, "[%s]Tag:%u, Seq:%u, CRC:%04x -- %s", FName.c_str(),
+        pmsgstruct->tag, pmsgstruct->seq, crc,
+        text.c_str());
+    logger.Log(buffer);
+}
 ///////////////////////////////////////////
 //IRawMsgPush
-void WorkThread::Push(RawMsg* pmsg)
+void WorkThread::Push(Msg* pmsg)
 {
     if (isConnected){
-        if (mpDevCfg->iMaxMsgQueue > 0){
-            while(mRawMsgQueue->Count() > mpDevCfg->iMaxMsgQueue){
-                RawMsg* cpmsg = mRawMsgQueue->Pop();
-                delete cpmsg;
+        // valid message
+        if (pmsg->validedOK){
+            if (mpDevCfg->iMaxMsgQueue > 0){
+                while(mRawMsgQueue->Count() > mpDevCfg->iMaxMsgQueue){
+                    RawMsg* cpmsg = mRawMsgQueue->Pop();
+                    delete cpmsg;
+                }
+            }
+            RawMsg* rawmsg = new RawMsg(pmsg->rawmsg);
+            mRawMsgQueue->Push(rawmsg);
+        }else{
+            if (strcmp(pmsg->from, FPrevMsg->from) == 0){
+                // these is a error back message
+                // resend current message immediately
+                if (FController != NULL){
+                    LogMsg("resend current message because of error back");
+                    FController->dispatchMsg(FChannel, FPrevMsg);
+                }
+            }else{
+                // these is a error message from source channel
+                // just back to the originator
+                if (FController != NULL){
+                    LogMsg("resend origne message because of error CRC");
+                    FController->dispatchMsg(FChannel, pmsg);
+                }
             }
         }
-        RawMsg* cpmsg = new RawMsg();
-        *cpmsg = *pmsg;
-        mRawMsgQueue->Push(cpmsg);
     }else{
         LogMsg("Device has not connected, drop it.");
     }

@@ -8,7 +8,7 @@
       ..\comm\UnitLogWriter.obj UMasterWorkThread.obj UMsg.obj UMsgQueue.obj 
       UServerWorkThread.obj USerialWorkThread.obj ..\comm\Tools.obj 
       loopbuffer.obj UClientWorkThread.obj UServerClientWorkThread.obj 
-      UMasterMessageHandler.obj ..\comm\UAlgorithm.obj"/>
+      UMasterMessageHandler.obj ..\comm\UAlgorithm.obj UController.obj"/>
     <RESFILES value="Master.res"/>
     <IDLFILES value=""/>
     <IDLGENFILES value=""/>
@@ -45,8 +45,8 @@
       -I&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot; 
       -ID:\Projects\IORouter\sourcecode\Master -I$(BCB)\include 
       -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -D_DEBUG -boa"/>
-    <CFLAG1 value="-Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -c 
-      -tW -tWM"/>
+    <CFLAG1 value="-vGc -vGt -vGd -Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k 
+      -y -v -vi- -c -tW -tWM"/>
     <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
     <AFLAGS value="/mx /w2 /zi"/>
@@ -56,7 +56,7 @@
   <LINKER>
     <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
     <ALLRES value="$(RESFILES)"/>
-    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <ALLLIB value="cg32.lib $(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
     <OTHERFILES value=""/>
   </LINKER>
   <FILELIST>
@@ -78,6 +78,7 @@
       <FILE FILENAME="UServerClientWorkThread.cpp" FORMNAME="" UNITNAME="UServerClientWorkThread" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="UMasterMessageHandler.cpp" FORMNAME="" UNITNAME="UMasterMessageHandler" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="..\comm\UAlgorithm.cpp" FORMNAME="" UNITNAME="UAlgorithm" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="UController.cpp" FORMNAME="" UNITNAME="UController" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -89,7 +90,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=1
 Release=1
-Build=4
+Build=5
 Debug=0
 PreRelease=0
 Special=0
@@ -101,7 +102,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=
 FileDescription=
-FileVersion=1.1.1.4
+FileVersion=1.1.1.5
 InternalName=
 LegalCopyright=
 LegalTrademarks=
@@ -150,7 +151,7 @@ RemoteDebug=0
 [Compiler]
 ShowInfoMsgs=0
 LinkDebugVcl=0
-LinkCGLIB=0
+LinkCGLIB=1
 
 [CORBA]
 AddServerUnit=1

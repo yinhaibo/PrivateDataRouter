@@ -89,7 +89,7 @@ private:
     AnsiString FName;
     long FSeed;
 
-    unsigned char sendSeq;
+    unsigned int sendSeq;
 
     message_send_status_t msgStatus; //Message status
 protected:
@@ -134,6 +134,7 @@ protected:
     virtual void __fastcall onReStart(){};
 
     void LogMsg(AnsiString msg);
+    void LogMsg(message_t* pmsg, AnsiString text);
 
     int __fastcall getRandRange(int from , int to);
 

@@ -6,6 +6,7 @@
 #include <Classes.hpp>
 #include "UComm.h"
 #include "UMsgQueue.h"
+#include "UController.h"
 
 
 //---------------------------------------------------------------------------
@@ -66,7 +67,7 @@ typedef enum _recv_msg_status_t
 #define MESSAGE_CRC_LEN (2)
 
 // Work thread define
-class WorkThread : public TThread, IRawMsgPush
+class WorkThread : public TThread, IMsgPush
 {            
 protected:
     TOpenChannelEvent FOnServerOpen;
@@ -105,8 +106,14 @@ protected:
     const device_config_t* mpDevCfg;
     long FSeed;
     
-    IQueue* mMasterQueue;
     AnsiString FName; //The message will be sent
+    Controller* FController;
+    Channel* FChannel;
+    // Current message sequence which received from simulator
+    unsigned int FCurrentMsgSeq;
+    unsigned int FPrevMsgSeq;
+    Msg* FPrevMsg; // Old message which has sent, keep for resent by master
+    bool FLocalMessage;
     
     work_status_t FStatus; // Current work status
                            // Wait, Connect, working, stop
@@ -142,6 +149,8 @@ protected:
     virtual void __fastcall onInit() = 0;
     virtual void __fastcall onStart() = 0;
     virtual void __fastcall onStop() = 0;
+    void __fastcall StartOK();
+    void __fastcall StopOK();
     // Parameter changing
     virtual void __fastcall onParameterChange() = 0;
 
@@ -155,11 +164,13 @@ protected:
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len) = 0;
 
     void LogMsg(AnsiString msg);
+    void LogMsg(RawMsg& msg, AnsiString text);
 
     int __fastcall getRandRange(int from , int to);
 public:
     __fastcall WorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name);
+            const AnsiString& name,
+            Controller* controller);
     __fastcall virtual ~WorkThread();
     __fastcall void Start();
     __fastcall void Stop();
@@ -173,8 +184,8 @@ public:
     __property TErrMsgEvent OnErrMsg  = { read=FOnErrMsg, write=FOnErrMsg };
     __property int Tag  = { read=FTag, write=FTag };
 
-    //IRawMsgPush
-    virtual void Push(RawMsg* pmsg);
+    //IMsgPush
+    virtual void Push(Msg* pmsg);
     __property AnsiString Name  = { read=FName, write=FName };
     __property long Seed  = { read=FSeed, write=FSeed };
 };

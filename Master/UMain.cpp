@@ -27,20 +27,30 @@ TFMain *FMain;
 #define COL_IDX_OPERATION    9
 #define COL_IDX_MAX         10
 
+
 LogFileEx logger;
 
 __fastcall TFMain::TFMain(TComponent* Owner)
         : TForm(Owner)
 {
-    mRxBytes = mTxBytes = 0;
+    mRxBytes[0] = mTxBytes[0] = 0;
+    mRxBytes[1] = mTxBytes[1] = 0;
+    mRxBytes[2] = mTxBytes[2] = 0;
     qFrontSentBytes = 0;
+
+    iChPri[0] = 3;
+    iChPri[1] = 2;
+    iChPri[2] = 1;
+    UpdateChannelPriUI();
     
     CreateUI();
 
     lstThreadObj = new TStringList();
     csWorkVar = new TCriticalSection(); // Cretea critical section
     
-    masterThread = new MasterWorkThread();
+    masterThread[0] = new MasterWorkThread(1, &mController, 3);
+    masterThread[1] = new MasterWorkThread(2, &mController, 2);
+    masterThread[2] = new MasterWorkThread(3, &mController, 1);
     
     ReloadConfigure();
     if (lstDeviceConfig.size() == 0){
@@ -158,10 +168,16 @@ void __fastcall TFMain::rbMasterClientModeClick(TObject *Sender)
     
     lblMasterPort->Enabled = false;
     txtMasterPort->Enabled = false;
-    lblPeerClientIP->Enabled = false;
-    txtPeerClientIP->Enabled = false;
     btnOpen->Enabled = false;
-    lblListenStatus->Enabled = false;    
+    lblListenStatus->Enabled = false;
+    lblChanneControl->Enabled = false;
+    lblCh1->Enabled = false;
+    cboErrorCH1->Enabled = false;
+    cboErrorCH2->Enabled = false;
+    cboErrorCH3->Enabled = false;
+    cboErrorValCH1->Enabled = false;
+    cboErrorValCH2->Enabled = false;
+    cboErrorValCH3->Enabled = false;
 }
 //---------------------------------------------------------------------------
 
@@ -177,10 +193,16 @@ void __fastcall TFMain::rbMasterServerModeClick(TObject *Sender)
 
     lblMasterPort->Enabled = true;
     txtMasterPort->Enabled = true;
-    lblPeerClientIP->Enabled = true;
-    txtPeerClientIP->Enabled = true;
     btnOpen->Enabled = true;
     lblListenStatus->Enabled = true;
+    lblChanneControl->Enabled = true;
+    lblCh1->Enabled = true;
+    cboErrorCH1->Enabled = true;
+    cboErrorCH2->Enabled = true;
+    cboErrorCH3->Enabled = true;
+    cboErrorValCH1->Enabled = true;
+    cboErrorValCH2->Enabled = true;
+    cboErrorValCH3->Enabled = true;
 }
 //---------------------------------------------------------------------------
 void TFMain::SaveConfigure()
@@ -192,7 +214,7 @@ void TFMain::SaveConfigure()
     int devicecnt = ini->ReadInteger("head", "DeviceCount", 0);
     if (devicecnt > 0){
         // Clear old data
-        for (int i = 0; i < devicecnt; i++){
+        for (int i = 1; i <= devicecnt; i++){
             ini->EraseSection("Device" + IntToStr(i));
         }
     }
@@ -204,7 +226,16 @@ void TFMain::SaveConfigure()
     ini->WriteString("Master", "PeerIP", txtPeerIP->Text);
     ini->WriteString("Master", "PeerPort", txtPeerPort->Text);
     ini->WriteString("Master", "MasterPort", txtMasterPort->Text);
-    ini->WriteString("Master", "PeerClientIP", txtPeerClientIP->Text);
+
+    ini->WriteInteger("Channel1", "ErrorMode", masterConfig[0].errorModeIdx);
+    ini->WriteInteger("Channel1", "UniformValue", masterConfig[0].uniformErrorVal);
+    ini->WriteInteger("Channel1", "PossionValue", masterConfig[0].possionErrorVal);
+    ini->WriteInteger("Channel2", "ErrorMode", masterConfig[1].errorModeIdx);
+    ini->WriteInteger("Channel2", "UniformValue", masterConfig[1].uniformErrorVal);
+    ini->WriteInteger("Channel2", "PossionValue", masterConfig[1].possionErrorVal);
+    ini->WriteInteger("Channel3", "ErrorMode", masterConfig[2].errorModeIdx);
+    ini->WriteInteger("Channel3", "UniformValue", masterConfig[2].uniformErrorVal);
+    ini->WriteInteger("Channel3", "PossionValue", masterConfig[2].possionErrorVal);
 
     
     String sectionName;
@@ -226,7 +257,8 @@ void TFMain::SaveConfigure()
         ini->WriteString(sectionName, "EOFMessage", pDevCfg->eofMessage);
         ini->WriteString(sectionName, "ErrorDistribution", GetDistributionDesc(pDevCfg->errorMode));
         ini->WriteInteger(sectionName, "ErrorThreshold", pDevCfg->errorThreshold);
-    }   ini->WriteInteger(sectionName, "MaxMessageQueue", pDevCfg->iMaxMsgQueue);
+        ini->WriteInteger(sectionName, "MaxMessageQueue", pDevCfg->iMaxMsgQueue);
+    }
     delete ini;
 }
 //---------------------------------------------------------------------------
@@ -253,8 +285,23 @@ void TFMain::ReloadConfigure()
     txtPeerIP->Text = ini->ReadString("Master", "PeerIP", "");
     txtPeerPort->Text = ini->ReadString("Master", "PeerPort", "");
     txtMasterPort->Text = ini->ReadString("Master", "MasterPort", "");
-    txtPeerClientIP->Text = ini->ReadString("Master", "PeerClientIP", "");
     chkAutoReconn->Checked = ini->ReadBool("Master", "AutoReconnect", false);
+    masterConfig[0].errorModeIdx = ini->ReadInteger("Channel1", "ErrorMode", 0);
+    masterConfig[0].uniformErrorVal = ini->ReadInteger("Channel1", "UniformValue", 10);
+    masterConfig[0].possionErrorVal = ini->ReadInteger("Channel1", "PossionValue", 50);
+    masterConfig[1].errorModeIdx = ini->ReadInteger("Channel2", "ErrorMode", 0);
+    masterConfig[1].uniformErrorVal = ini->ReadInteger("Channel2", "UniformValue", 10);
+    masterConfig[1].possionErrorVal = ini->ReadInteger("Channel2", "PossionValue", 50);
+    masterConfig[2].errorModeIdx = ini->ReadInteger("Channel3", "ErrorMode", 0);
+    masterConfig[2].uniformErrorVal = ini->ReadInteger("Channel3", "UniformValue", 10);
+    masterConfig[2].possionErrorVal = ini->ReadInteger("Channel3", "PossionValue", 50);
+
+    cboErrorCH1->ItemIndex = masterConfig[0].errorModeIdx;
+    cboErrorCH2->ItemIndex = masterConfig[1].errorModeIdx;
+    cboErrorCH3->ItemIndex = masterConfig[2].errorModeIdx;
+    cboErrorCH1Change(NULL);
+    cboErrorCH2Change(NULL);
+    cboErrorCH3Change(NULL);
     
     gridDevices->RowCount = 1;
     String sectionName;
@@ -351,7 +398,7 @@ void TFMain::ReloadConfigure()
 
         pDevCfg->iMaxMsgQueue = ini->ReadInteger(sectionName, "MaxMessageQueue", 1);
         
-        pDevCfg->seq = seq;
+        pDevCfg->seq = seq++;
 
         //Insert into proper position
         lstDeviceConfig.push_back(pDevCfg);
@@ -407,11 +454,11 @@ WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
     if (pDevCfg->mode == WORK_MODE_SERIAL){
         // create a new work thread
         thread = new SerialWorkThread(pDevCfg,
-            masterThread->GetQueue(), pDevCfg->source);
+            pDevCfg->source, &mController);
     }else{
         // create a new server thread
         thread = new ServerWorkThread(pDevCfg,
-            masterThread->GetQueue(), pDevCfg->source);
+            pDevCfg->source, &mController);
 
     }
     thread->Tag = rowidx;
@@ -464,85 +511,89 @@ void __fastcall TFMain::gridDevicesTopLeftChanged(TObject *Sender)
 void __fastcall TFMain::btnOpenClick(TObject *Sender)
 {
     if (btnOpen->Tag == 0){
-        
-        masterThread->OnRxMsg = onMasterRxMsg;
-        masterThread->OnTxMsg = onMasterTxMsg;
-        masterThread->OnOpenChannel = onMasterOpenChannel;
-        masterThread->OnCloseChannel = onMasterCloseChannel;
-        masterThread->OnServerOpen = onMasterServerOpen;
-        masterThread->OnTextMessage = onTextMessage;
-        masterThread->WorkVar = csWorkVar;
-        masterThread->ThreadList = lstThreadObj;
-        // open master
-        masterThread->InitConnect(StrToInt(txtMasterPort->Text));
-        
-        masterThread->StartWorking();
+
+        for (int i = 0; i < 3; i++){
+            masterThread[i]->OnRxMsg = onMasterRxMsg;
+            masterThread[i]->OnTxMsg = onMasterTxMsg;
+            masterThread[i]->OnOpenChannel = onMasterOpenChannel;
+            masterThread[i]->OnCloseChannel = onMasterCloseChannel;
+            masterThread[i]->OnServerOpen = onMasterServerOpen;
+            masterThread[i]->OnTextMessage = onTextMessage;
+            masterThread[i]->WorkVar = csWorkVar;
+            masterThread[i]->ThreadList = lstThreadObj;
+            // open master
+            masterThread[i]->InitConnect(GetMasterCHPort(i));
+
+            masterThread[i]->StartWorking();
+        }
+
+        btnOpen->Tag = 1;
+        btnOpen->Caption = "&Stop";
+        btnOpen->Glyph->LoadFromResourceID((int)HInstance, 102);
+        lblListenStatus->Caption = "Start to open server port...";
         rbMasterServerMode->Enabled = false;
         rbMasterClientMode->Enabled = false;
+
+        tmrReconn->Enabled = true;
     }else{
-        masterThread->StopWorking();
-        //masterThread->Suspend();
+        for (int i = 0; i < 3; i++){
+            masterThread[i]->StopWorking();
+            SetMasterCHColor(i+1, clMedGray);
+            //masterThread->Suspend();
+        }
 
         btnOpen->Tag = 0;
+        btnOpen->Caption = "&Listen";
         btnOpen->Glyph->LoadFromResourceID((int)HInstance, 101);
-        txtPeerClientIP->Color = clWindow;
-
+        lblListenStatus->Caption = "Wait to start...";
+        
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
+
+        tmrReconn->Enabled = false;
     }
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TFMain::ServerMasterListen(TObject *Sender,
-      TCustomWinSocket *Socket)
-{
-    lblListenStatus->Caption = "Starting to listen...";
-    btnOpen->Tag = 1;
-    btnOpen->Caption = "Stop";
-    btnOpen->Glyph->LoadFromResourceID((int)HInstance, 102);
-}
-//---------------------------------------------------------------------------
-
-void __fastcall TFMain::ServerMasterAccept(TObject *Sender,
-      TCustomWinSocket *Socket)
-{
-    //lblListenStatus->Caption = "Starting to accept client connection...";
 }
 //---------------------------------------------------------------------------
 void __fastcall TFMain::btnConnectClick(TObject *Sender)
 {
     if (btnConnect->Tag == 0){
         // open
-        masterThread->OnRxMsg = onMasterRxMsg;
-        masterThread->OnTxMsg = onMasterTxMsg;
-        masterThread->OnOpenChannel = onMasterOpenChannel;
-        masterThread->OnCloseChannel = onMasterCloseChannel;
-        masterThread->OnTextMessage = onTextMessage;
-        masterThread->WorkVar = csWorkVar;
-        masterThread->ThreadList = lstThreadObj;
-        masterThread->InitConnect(txtPeerIP->Text, StrToInt(txtPeerPort->Text));
+        for (int i = 0; i < 3; i++){
+            masterThread[i]->OnRxMsg = onMasterRxMsg;
+            masterThread[i]->OnTxMsg = onMasterTxMsg;
+            masterThread[i]->OnOpenChannel = onMasterOpenChannel;
+            masterThread[i]->OnCloseChannel = onMasterCloseChannel;
+            masterThread[i]->OnTextMessage = onTextMessage;
+            masterThread[i]->WorkVar = csWorkVar;
+            masterThread[i]->ThreadList = lstThreadObj;
+            masterThread[i]->InitConnect(txtPeerIP->Text, GetPeerCHPort(i));
 
-        masterThread->StartWorking();
+            masterThread[i]->StartWorking();
+        }
+        btnConnect->Caption = "&Stop";
+        btnConnect->Tag = 1;
+        lblConnectStatus->Caption = "Start to connect.......";
+        btnConnect->Glyph->LoadFromResourceID((int)HInstance, 102);
         rbMasterServerMode->Enabled = false;
         rbMasterClientMode->Enabled = false;
+
+        tmrReconn->Enabled = true;
     }else{
-        masterThread->StopWorking();
+        for (int i = 0; i < 3; i++){
+            masterThread[i]->StopWorking();
+        }
         //masterThread->Suspend();
         
         btnConnect->Tag = 0;
-        btnConnect->Caption = "Connect";
+        btnConnect->Caption = "&Start";
         btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
-        lblConnectStatus->Caption = "Wait to connect.......";
+        lblConnectStatus->Caption = "Wait to start.......";
 
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
-    }
-}
-//---------------------------------------------------------------------------
-void __fastcall TFMain::tmrReconnTimer(TObject *Sender)
-{
+
         tmrReconn->Enabled = false;
-        btnConnectClick(Sender);
+    }
 }
 //---------------------------------------------------------------------------
 
@@ -550,9 +601,15 @@ void __fastcall TFMain::tmrReconnTimer(TObject *Sender)
 
 void __fastcall TFMain::btnClearClick(TObject *Sender)
 {
-    mRxBytes = mTxBytes = 0;
-    txtRxBytes->Text = "0";
-    txtTxBytes->Text = "0";
+    mRxBytes[0] = mTxBytes[0] = 0;
+    mRxBytes[1] = mTxBytes[1] = 0;
+    mRxBytes[2] = mTxBytes[2] = 0;
+    txtRxBytesCH1->Text = "0";
+    txtTxBytesCH1->Text = "0";
+    txtRxBytesCH2->Text = "0";
+    txtTxBytesCH2->Text = "0";
+    txtRxBytesCH3->Text = "0";
+    txtTxBytesCH3->Text = "0";
 
     for (int i = 1; i < gridDevices->RowCount; i++){
         gridDevices->Cells[COL_IDX_RX][i] = "0";
@@ -592,13 +649,13 @@ void __fastcall TFMain::onTxMsg(WorkThread* Sender, int msgcnt)
     
     PostMessage(Handle, WM_UPDATE_TX_MSG_CNT, rowidx, msgcnt);
 }
-void __fastcall TFMain::onMasterRxMsg(MasterWorkThread* Sender, int msgcnt)
+void __fastcall TFMain::onMasterRxMsg(int ch, int msgcnt)
 {
-    PostMessage(Handle, WM_UPDATE_MASTER_RX_BYTES, 0, msgcnt);
+    PostMessage(Handle, WM_UPDATE_MASTER_RX_BYTES, ch, msgcnt);
 }
-void __fastcall TFMain::onMasterTxMsg(MasterWorkThread* Sender, int msgcnt)
+void __fastcall TFMain::onMasterTxMsg(int ch, int msgcnt)
 {
-    PostMessage(Handle, WM_UPDATE_MASTER_TX_BYTES, 0, msgcnt);
+    PostMessage(Handle, WM_UPDATE_MASTER_TX_BYTES, ch, msgcnt);
 }
 void __fastcall TFMain::UpdateOpenStatus(TMessage* Msg)
 {
@@ -628,21 +685,18 @@ void __fastcall TFMain::UpdateTxMsgCnt(TMessage* Msg)
 void __fastcall TFMain::UpdateMasterTxMsgCnt(TMessage* Msg)
 {
     //logger.Log("Mater Tx:" + IntToStr(Msg->LParam) + "/" + txtTxBytes->Text);
-    int bytes = StrToInt(txtTxBytes->Text);
+    int ch = (int)(Msg->WParam & 0xFF);
+    int bytes = GetMasterCHTxBytes(ch);
     if (bytes == 0){
         mTxStartTick = ::GetTickCount();
     }
     bytes += Msg->LParam;
-    txtTxBytes->Text = IntToStr(bytes);
+    SetMasterCHTxBytes(ch, bytes);
     if (mTxStartTick > 0){
         unsigned int seconds = ((GetTickCount() - mTxStartTick)/1000);
         if (seconds > 0){
             float rate = 1.0f * bytes / seconds;
-            if (rate > 1024){
-                lblTxRate->Caption = IntToStr(int(rate/1024)) + "KB/S";
-            }else{
-                lblTxRate->Caption = IntToStr((int)rate) + "B/S";
-            }
+            SetTxRate(ch, rate);
             if (seconds >= 60){
                 mTxStartTick = GetTickCount();
             }
@@ -651,25 +705,21 @@ void __fastcall TFMain::UpdateMasterTxMsgCnt(TMessage* Msg)
 }
 void __fastcall TFMain::UpdateMasterRxMsgCnt(TMessage* Msg)
 {
+    int ch = (int)(Msg->WParam & 0xFF);
     //logger.Log("Mater Rx:" + IntToStr(Msg->LParam) + "/" + txtRxBytes->Text);
     char caStrBuf[100];
-    int bytes = StrToInt(txtRxBytes->Text);
+    int bytes = GetMasterCHRxBytes(ch);
     if (bytes == 0){
         mRxStartTick = ::GetTickCount();
     }
     bytes += Msg->LParam;
     try{
-        txtRxBytes->Text = IntToStr(bytes);
+        SetMasterCHRxBytes(ch, bytes);
         if (mRxStartTick > 0){
             unsigned int seconds = ((GetTickCount() - mRxStartTick)/1000);
             if (seconds > 0){
                 float rate = 1.0f * bytes / seconds;
-                if (rate > 1024){
-                    snprintf(caStrBuf, sizeof(caStrBuf), "%d KB/S", (int)(rate/1024));
-                }else{
-                    snprintf(caStrBuf, sizeof(caStrBuf), "%d B/S", (int)(rate));
-                }
-                lblRxRate->Caption = AnsiString(caStrBuf);
+                SetRxRate(ch, rate);
                 if (seconds >= 60){
                     mTxStartTick = GetTickCount();
                 }
@@ -678,17 +728,57 @@ void __fastcall TFMain::UpdateMasterRxMsgCnt(TMessage* Msg)
     }catch(Exception& e){
     }
 }
-void __fastcall TFMain::onMasterOpenChannel(WorkThread* Sender, bool opened)
+void TFMain::SetRxRate(int ch, float rate)
 {
-    PostMessage(Handle, WM_UPDATE_MASTER_OPEN, 0, opened);
+    char caStrBuf[100];
+    if (rate > 1024){
+        snprintf(caStrBuf, sizeof(caStrBuf), "%d KB/S", (int)(rate/1024));
+    }else{
+        snprintf(caStrBuf, sizeof(caStrBuf), "%d B/S", (int)(rate));
+    }
+    switch(ch){
+    case 1:
+        lblRxRate1->Caption = AnsiString(caStrBuf);
+        break;
+    case 2:
+        lblRxRate2->Caption = AnsiString(caStrBuf);
+        break;
+    case 3:
+        lblRxRate3->Caption = AnsiString(caStrBuf);
+        break;
+    }
 }
-void __fastcall TFMain::onMasterCloseChannel(WorkThread* Sender, bool closed)
+void TFMain::SetTxRate(int ch, float rate)
 {
-    PostMessage(Handle, WM_UPDATE_MASTER_CLOSE, 0, closed);
+    char caStrBuf[100];
+    if (rate > 1024){
+        snprintf(caStrBuf, sizeof(caStrBuf), "%d KB/S", (int)(rate/1024));
+    }else{
+        snprintf(caStrBuf, sizeof(caStrBuf), "%d B/S", (int)(rate));
+    }
+    switch(ch){
+    case 1:
+        lblTxRate1->Caption = AnsiString(caStrBuf);
+        break;
+    case 2:
+        lblTxRate2->Caption = AnsiString(caStrBuf);
+        break;
+    case 3:
+        lblTxRate3->Caption = AnsiString(caStrBuf);
+        break;
+    }
 }
-void __fastcall TFMain::onMasterServerOpen(WorkThread* Sender, bool closed)
+void __fastcall TFMain::onMasterOpenChannel(int ch, bool opened)
 {
-    PostMessage(Handle, WM_UPDATE_MASTER_SERVER_OPEN, 0, closed);
+    PostMessage(Handle, WM_UPDATE_MASTER_OPEN, ch, opened);
+}
+void __fastcall TFMain::onMasterCloseChannel(int ch, bool closed)
+{
+    PostMessage(Handle, WM_UPDATE_MASTER_CLOSE, ch, closed);
+}
+void __fastcall TFMain::onMasterServerOpen(int ch, bool closed)
+{
+    PostMessage(Handle, WM_UPDATE_MASTER_SERVER_OPEN, ch, closed);
 }
 void __fastcall TFMain::UpdateServerOpen(TMessage* Msg)
 {
@@ -719,32 +809,36 @@ void __fastcall TFMain::UpdateServerOpen(TMessage* Msg)
 }
 
 void __fastcall TFMain::onTextMessage(
-    int source, AnsiString msg)
+    int ch, int source, AnsiString msg)
 {
     switch(source){
     case TEXT_MSG_SRC_CLIENT_INFO:
-        txtPeerClientIP->Text = msg;
+        //txtPeerClientIP->Text = msg;
         break;
     case TEXT_MSG_SRC_OP_ERROR:
         lblListenStatus->Caption = msg;
-        btnOpen->Tag = 0;
-        btnOpen->Glyph->LoadFromResourceID((int)HInstance, 101);
-        txtPeerClientIP->Color = clWindow;
+        SetMasterCHColor(ch, clMedGray);
 
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
         break;
     case TEXT_MSG_SRC_OP_ERROR_CLIENT:
-        btnConnect->Tag = 0;
-        btnConnect->Caption = "Connect";
-        btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
-        lblConnectStatus->Caption = msg;
-
-        rbMasterServerMode->Enabled = true;
-        rbMasterClientMode->Enabled = true;
+        if (rbMasterClientMode->Enabled){
+            //btnConnect->Tag = 0;
+            //btnConnect->Caption = "Connect";
+            //btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
+            //lblConnectStatus->Caption = msg;
+            btnConnectClick(NULL);
+        }else{
+            btnOpenClick(NULL);
+        }
         break;
     case TEXT_MSG_SRC_CLIENT_NOTIFY:
         lblConnectStatus->Caption = msg;
+        break;
+    case TEXT_MSG_SRC_CLIENT_COUNT:
+        SetMasterCHColor(ch, clGreen);
+        SetMasterCHConnections(ch, msg);
         break;
     default:
         ShowMessage(msg);
@@ -753,37 +847,42 @@ void __fastcall TFMain::onTextMessage(
 
 void __fastcall TFMain::UpdateMasterOpenStatus(TMessage* Msg)
 {
+    int ch = (int)(Msg->WParam & 0xFF);
     if (rbMasterClientMode->Checked){
         btnConnect->Tag = 1;
-        btnConnect->Caption = "Dis&connect";
+        //btnConnect->Caption = "Dis&connect";
         btnConnect->Glyph->LoadFromResourceID((int)HInstance, 102);
         lblConnectStatus->Caption = "Remote master has connected.";
+        SetMasterCHConnections(ch, "1");
+        SetMasterCHColor(ch, clGreen);
     }else{
-        lblListenStatus->Caption = "Client has connected.";
-        txtPeerClientIP->Color = clMoneyGreen;
+        lblListenStatus->Caption = "Channel " + IntToStr(ch) + " has a client connected.";
+        SetMasterCHColor(ch, clGreen);
     }
 }
 void __fastcall TFMain::UpdateMasterCloseStatus(TMessage* Msg)
 {
+    int ch = (int)(Msg->WParam & 0xFF);
     if (rbMasterClientMode->Checked){
         btnConnect->Tag = 0;
-        btnConnect->Caption = "&Connect";
+        //btnConnect->Caption = "&Connect";
         btnConnect->Glyph->LoadFromResourceID((int)HInstance, 101);
-        lblConnectStatus->Caption = "Wait to connect.......";
+        lblConnectStatus->Caption = "Wait to reconnect.......";
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
+        SetMasterCHConnections(ch, "0");
+        SetMasterCHColor(ch, clMedGray);
     }else{
         lblListenStatus->Caption = "Client has disconnected, keep wait.";
-        txtPeerClientIP->Text = "";
-        txtPeerClientIP->Color = clWindow;
+        SetMasterCHColor(ch, clMedGray);
     }
 }
 void __fastcall TFMain::UpdateMasterServerOpen(TMessage* Msg)
 {
+    int ch = (int)(Msg->WParam & 0xFF);
+    SetMasterCHColor(ch, clGreen);
     if (rbMasterServerMode->Checked){
-        lblListenStatus->Caption = "Starting to listen...";
-        btnOpen->Tag = 1;
-        btnOpen->Glyph->LoadFromResourceID((int)HInstance, 102);
+        lblListenStatus->Caption = "Channel " + IntToStr(ch) + " starting to listen...";
     }
 }
 //---------------------------------------------------------------------------
@@ -793,12 +892,12 @@ void __fastcall TFMain::FormClose(TObject *Sender, TCloseAction &Action)
     // Terminal all threads
     TerminateAllThread();
     
-    masterThread->Terminate();
+    /*masterThread->Terminate();
     if (!masterThread->Suspended){
         masterThread->WaitFor();
     }
     delete masterThread;
-    masterThread = NULL;
+    masterThread = NULL;*/
 
     lstThreadObj->Clear();
     delete lstThreadObj;
@@ -860,6 +959,12 @@ void TFMain::TerminateAllThread()
             (*it).second.button = NULL;
         }
         mWorkItems.clear();
+
+        for (int i = 0; i < 3; i++){
+            masterThread[i]->Terminate();
+            masterThread[i]->WaitFor();
+            delete masterThread[i];
+        }
     }__finally{
         csWorkVar->Leave();
     }
@@ -870,7 +975,9 @@ void TFMain::TerminateAllThread()
 
 void __fastcall TFMain::chkAutoReconnClick(TObject *Sender)
 {
-    masterThread->AutoReconnect = chkAutoReconn->Checked;    
+    for (int i = 0; i < 3; i++){
+        masterThread[i]->AutoReconnect = chkAutoReconn->Checked;
+    }
 }
 //---------------------------------------------------------------------------
 void __fastcall TFMain::Dispatch(void *Message)
@@ -911,4 +1018,361 @@ void __fastcall TFMain::Dispatch(void *Message)
         TForm::Dispatch(Message);
         break;
     }
+}
+
+int TFMain::GetMasterCHTxBytes(int ch)
+{
+    switch(ch){
+    case 1:
+        return StrToInt(txtTxBytesCH1->Text);
+    case 2:
+        return StrToInt(txtTxBytesCH2->Text);
+    case 3:
+    default:
+        return StrToInt(txtTxBytesCH3->Text);
+    }
+}
+
+void TFMain::SetMasterCHTxBytes(int ch, int val)
+{
+    AnsiString valText = IntToStr(val);
+    switch(ch){
+    case 1:
+        txtTxBytesCH1->Text = valText;
+        break;
+    case 2:
+        txtTxBytesCH2->Text = valText;
+        break;
+    case 3:
+    default:
+        txtTxBytesCH3->Text = valText;
+    }
+}
+
+int TFMain::GetMasterCHRxBytes(int ch)
+{
+    switch(ch){
+    case 1:
+        return StrToInt(txtRxBytesCH1->Text);
+    case 2:
+        return StrToInt(txtRxBytesCH2->Text);
+    case 3:
+    default:
+        return StrToInt(txtRxBytesCH3->Text);
+    }
+}
+
+void TFMain::SetMasterCHRxBytes(int ch, int val)
+{
+    AnsiString valText = IntToStr(val);
+    switch(ch){
+    case 1:
+        txtRxBytesCH1->Text = valText;
+        break;
+    case 2:
+        txtRxBytesCH2->Text = valText;
+        break;
+    case 3:
+    default:
+        txtRxBytesCH3->Text = valText;
+    }
+}
+
+void TFMain::SetMasterCHColor(int ch, TColor color)
+{
+    switch(ch){
+    case 1:
+        lblConnCntCH1->Color = color;
+        break;
+    case 2:
+        lblConnCntCH2->Color = color;
+        break;
+    case 3:
+    default:
+        lblConnCntCH3->Color = color;
+    }
+}
+
+void TFMain::SetMasterCHConnections(int ch, AnsiString val)
+{
+    switch(ch){
+    case 1:
+        lblConnCntCH1->Caption = val;
+        break;
+    case 2:
+        lblConnCntCH2->Caption = val;
+        break;
+    case 3:
+    default:
+        lblConnCntCH3->Caption = val;
+    }
+}
+
+short TFMain::GetMasterCHPort(int ch)
+{
+    int splitpos = txtMasterPort->Text.AnsiPos(",");
+    if (splitpos > 0){
+        // maybe like ,7000,7100,7200
+        AnsiString src = txtMasterPort->Text;
+        int prepos = 0;
+        int splitidx = 0;
+        for (int idx = 0; idx < src.Length(); idx++){
+            if (src.c_str()[idx] == ','){
+                AnsiString portStr = txtMasterPort->Text.SubString(prepos, idx - prepos);
+                if (ch == splitidx){
+                    return StrToInt(portStr);
+                }
+                prepos = idx;
+                splitidx++;
+            }
+        }
+    }
+
+    // Only one port, or like 7000-, 7000-7002
+    // or error port string
+    int port = StrToInt(txtMasterPort->Text);
+    return port + ch;
+}
+
+short TFMain::GetPeerCHPort(int ch)
+{
+    int splitpos = txtPeerPort->Text.AnsiPos(",");
+    if (splitpos > 0){
+        // maybe like ,7000,7100,7200
+        AnsiString src = txtPeerPort->Text;
+        int prepos = 0;
+        int splitidx = 0;
+        for (int idx = 0; idx < src.Length(); idx++){
+            if (src.c_str()[idx] == ','){
+                AnsiString portStr = txtPeerPort->Text.SubString(prepos, idx - prepos);
+                if (ch == splitidx){
+                    return StrToInt(portStr);
+                }
+                prepos = idx;
+                splitidx++;
+            }
+        }
+    }
+
+    // Only one port, or like 7000-, 7000-7002
+    // or error port string
+    int port = StrToInt(txtPeerPort->Text);
+    return port + ch;
+}
+
+void TFMain::UpdateChannelPriUI()
+{
+    int chLevel[3];
+    if (iChPri[0] >= iChPri[1] && iChPri[0] >= iChPri[2]){
+        chLevel[0] = 3;
+    }else if(iChPri[0] < iChPri[1] && iChPri[0] < iChPri[2]){
+        chLevel[0] = 1;
+    }else{
+        chLevel[0] = 2;
+    }
+
+    if (iChPri[1] >= iChPri[0] && iChPri[1] >= iChPri[2]){
+        chLevel[1] = 3;
+    }else if(iChPri[1] < iChPri[0] && iChPri[1] < iChPri[2]){
+        chLevel[1] = 1;
+    }else{
+        chLevel[1] = 2;
+    }
+
+    if (iChPri[2] >= iChPri[0] && iChPri[2] >= iChPri[1]){
+        chLevel[2] = 3;
+    }else if(iChPri[2] < iChPri[0] && iChPri[2] < iChPri[1]){
+        chLevel[2] = 1;
+    }else{
+        chLevel[2] = 2;
+    }
+
+    if (chLevel[0] == chLevel[2]) chLevel[2]--;
+    if (chLevel[0] == chLevel[1]) chLevel[1]--;
+    if (chLevel[1] == chLevel[2]) chLevel[2]--;
+
+
+
+    ShapeCH12->Visible = false;
+    ShapeCH13->Visible = false;
+    if (chLevel[0] >= 2){ShapeCH12->Visible = true;}
+    if (chLevel[0] >= 3){ShapeCH13->Visible = true;}
+
+    ShapeCH22->Visible = false;
+    ShapeCH23->Visible = false;
+    if (chLevel[1] >= 2){ShapeCH22->Visible = true;}
+    if (chLevel[1] >= 3){ShapeCH23->Visible = true;}
+
+    ShapeCH32->Visible = false;
+    ShapeCH33->Visible = false;
+    if (chLevel[2] >= 2){ShapeCH32->Visible = true;}
+    if (chLevel[2] >= 3){ShapeCH33->Visible = true;}
+}
+
+int TFMain::GetMaxPriChannel()
+{
+    int maxCh;
+    if (iChPri[0] >= iChPri[1]){
+        if (iChPri[0] >= iChPri[2]){
+            maxCh = 0;
+        }else{
+            maxCh = 2;
+        }
+    }else{
+        if (iChPri[1] >= iChPri[2]){
+            maxCh = 1;
+        }else{
+            maxCh = 2;
+        }
+    }
+
+    return maxCh;
+}
+
+void __fastcall TFMain::tmrReconnTimer(TObject *Sender)
+{
+    //Get master channel priority
+    iChPri[0] = masterThread[0]->GetChannelPriority();
+    iChPri[1] = masterThread[1]->GetChannelPriority();
+    iChPri[2] = masterThread[2]->GetChannelPriority();
+    UpdateChannelPriUI();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::cboErrorCH1Change(TObject *Sender)
+{
+    switch(cboErrorCH1->ItemIndex){
+    case 0:
+        cboErrorValCH1->Enabled = false;
+        cboErrorValCH1->Text = "--";
+        break;
+    case 1:
+        cboErrorValCH1->Enabled = true;
+        cboErrorValCH1->Items->Clear();
+        for (int i = 10; i <= 1000000; i = i * 10){
+            cboErrorValCH1->Items->Add("1/"+IntToStr(i));
+        }
+        cboErrorValCH1->Text = "1/" + IntToStr(masterConfig[0].uniformErrorVal);
+        break;
+    case 2:
+        cboErrorValCH1->Enabled = true;
+        cboErrorValCH1->Items->Clear();
+        for (int i = 0; i <= 100; i += 10){
+            cboErrorValCH1->Items->Add(IntToStr(i)+"%");
+        }
+        cboErrorValCH1->Text = IntToStr(masterConfig[0].possionErrorVal) + "%";
+        break;
+    }
+    masterConfig[0].errorModeIdx = cboErrorCH1->ItemIndex;
+    cboErrorValCH1Change(NULL);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::cboErrorCH2Change(TObject *Sender)
+{
+    switch(cboErrorCH2->ItemIndex){
+    case 0:
+        cboErrorValCH2->Enabled = false;
+        cboErrorValCH2->Text = "--";
+        break;
+    case 1:
+        cboErrorValCH2->Enabled = true;
+        cboErrorValCH2->Items->Clear();
+        for (int i = 10; i <= 1000000; i = i * 10){
+            cboErrorValCH2->Items->Add("1/"+IntToStr(i));
+        }
+        cboErrorValCH2->Text = "1/" + IntToStr(masterConfig[1].uniformErrorVal);
+        break;
+    case 2:
+        cboErrorValCH2->Enabled = true;
+        cboErrorValCH2->Items->Clear();
+        for (int i = 0; i <= 100; i += 10){
+            cboErrorValCH2->Items->Add(IntToStr(i)+"%");
+        }
+        cboErrorValCH2->Text = IntToStr(masterConfig[1].possionErrorVal) + "%";
+        break;
+    }
+    masterConfig[1].errorModeIdx = cboErrorCH2->ItemIndex;
+    cboErrorValCH2Change(NULL);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::cboErrorCH3Change(TObject *Sender)
+{
+    switch(cboErrorCH3->ItemIndex){
+    case 0:
+        cboErrorValCH3->Enabled = false;
+        cboErrorValCH3->Text = "--";
+        break;
+    case 1:
+        cboErrorValCH3->Enabled = true;
+        cboErrorValCH3->Items->Clear();
+        for (int i = 10; i <= 1000000; i = i * 10){
+            cboErrorValCH3->Items->Add("1/"+IntToStr(i));
+        }
+        cboErrorValCH3->Text = "1/" + IntToStr(masterConfig[2].uniformErrorVal);
+        break;
+    case 2:
+        cboErrorValCH3->Enabled = true;
+        cboErrorValCH3->Items->Clear();
+        for (int i = 0; i <= 100; i += 10){
+            cboErrorValCH3->Items->Add(IntToStr(i)+"%");
+        }
+        cboErrorValCH3->Text = IntToStr(masterConfig[2].possionErrorVal) + "%";
+        break;
+    }
+    masterConfig[2].errorModeIdx = cboErrorCH3->ItemIndex;
+    cboErrorValCH3Change(NULL);
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TFMain::cboErrorValCH1Change(TObject *Sender)
+{
+    if (masterConfig[0].errorModeIdx == ERROR_MODE_UNIFORM_IDX){
+        masterConfig[0].uniformErrorVal = StrToInt(
+            cboErrorValCH1->Text.SubString(
+                cboErrorValCH1->Text.AnsiPos("/")+1,
+                cboErrorValCH1->Text.Length()));
+    }else if(masterConfig[0].errorModeIdx == ERROR_MODE_POSSION_IDX){
+        masterConfig[0].possionErrorVal = StrToInt(cboErrorValCH1->Text.SubString(1,
+            cboErrorValCH1->Text.AnsiPos("%")-1));
+    }
+    UpdateChannelErrorMode(1);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::cboErrorValCH2Change(TObject *Sender)
+{
+    if (masterConfig[1].errorModeIdx == ERROR_MODE_UNIFORM_IDX){
+        masterConfig[1].uniformErrorVal = StrToInt(
+            cboErrorValCH2->Text.SubString(
+                cboErrorValCH2->Text.AnsiPos("/")+1,
+                cboErrorValCH2->Text.Length()));
+    }else if(masterConfig[1].errorModeIdx == ERROR_MODE_POSSION_IDX){
+        masterConfig[1].possionErrorVal = StrToInt(cboErrorValCH2->Text.SubString(1,
+            cboErrorValCH2->Text.AnsiPos("%")-1));
+    }
+    UpdateChannelErrorMode(2);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::cboErrorValCH3Change(TObject *Sender)
+{
+    if (masterConfig[2].errorModeIdx == ERROR_MODE_UNIFORM_IDX){
+        masterConfig[2].uniformErrorVal = StrToInt(
+            cboErrorValCH3->Text.SubString(
+                cboErrorValCH3->Text.AnsiPos("/")+1,
+                cboErrorValCH3->Text.Length()));
+    }else if(masterConfig[2].errorModeIdx == ERROR_MODE_POSSION_IDX){
+        masterConfig[2].possionErrorVal = StrToInt(cboErrorValCH3->Text.SubString(1,
+            cboErrorValCH3->Text.AnsiPos("%")-1));
+    }
+    UpdateChannelErrorMode(3);     
+}
+//---------------------------------------------------------------------------
+void TFMain::UpdateChannelErrorMode(int ch)
+{
+    if (ch <= 0 || ch > 3) return;
+    masterThread[ch-1]->UdateChannelErrorMode(&masterConfig[ch-1]);
 }

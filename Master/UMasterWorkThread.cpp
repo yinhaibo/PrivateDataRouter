@@ -22,9 +22,13 @@ void MasterWorkThread::Init()
     FAutoReconnect = true;
     mClientPeer = NULL;
 
+    FStartWorkingMode = false;
+
+
     FStatus = WORK_STATUS_WAIT;
     
-    queue = new MsgQueue();
+    //queue = new MsgQueue(); // Only for client mode
+    //FChannel = FController->registerChannel("", queue, 0);
     FMsgHandler = NULL;
     currSocketThread = NULL;
 
@@ -32,7 +36,9 @@ void MasterWorkThread::Init()
 }
 
 /* Master work thread */
-__fastcall MasterWorkThread::MasterWorkThread() : TThread(false)
+__fastcall MasterWorkThread::MasterWorkThread(int ch, Controller* controller,
+    int priority)
+    : TThread(false), FCh(ch), FController(controller),FPriority(priority)
 {
      Init();
 }
@@ -69,12 +75,12 @@ void __fastcall MasterWorkThread::Open(int port)
     }
 }
 
-void __fastcall MasterWorkThread::Open(AnsiString ip, int port) 
+void __fastcall MasterWorkThread::Open(AnsiString ip, int port)
 {
     FServerMode = false;
 
     if (FMsgHandler == NULL){
-        FMsgHandler = new MasterMessageHandler(this);
+        FMsgHandler = new MasterMessageHandler(this, NULL, FController);
     }
 
     if (mClient == NULL){
@@ -92,13 +98,14 @@ void __fastcall MasterWorkThread::Open(AnsiString ip, int port)
     mClient->OnError = onSocketError;
     try{
         mClient->Active = true;
+        
     }catch(Exception& e){
         logger.Log(IntToStr(::GetCurrentThreadId()) + "Open failure.");
-        FSource = TEXT_MSG_SRC_OP_ERROR_CLIENT;
+        FSource = TEXT_MSG_SRC_CLIENT_NOTIFY;
         FTextMessage = e.Message;
         Synchronize(UpdateTextMessageUI);
         Close();
-        FStatus = WORK_STATUS_WAIT;
+        //FStatus = WORK_STATUS_DELAYCONNECT;
     }
 }
 
@@ -107,10 +114,26 @@ void __fastcall MasterWorkThread::Close()
     if (FServerMode){
         if (mServer != NULL && mServer->Active){
             try{
-                CloseClientConnection();
-                mServer->Active = false;
+                LogMsg("Close all client thread...");
+                // Close all client connections
+                map<DWORD, ServerClientWorkThread*>::iterator it;
+                ServerClientWorkThread* wt;
+                for (it = mapClientThread.begin();
+                     it != mapClientThread.end();
+                     ++it){
+                     wt = it->second;
+                     wt->Terminate();
+                     wt->WaitFor();
+                     it->second = NULL;
+                     delete wt;
+                }
 
-            }catch(...){}
+                mServer->Active = false;
+                mapClientThread.clear();
+
+            }catch(Exception& e){
+                LogMsg("Close client error:" + e.Message);
+            }
         }
     }else{
         if (mClient != NULL && mClient->Active){
@@ -122,10 +145,16 @@ void __fastcall MasterWorkThread::Close()
             }catch(...){}
         }
     }
-    if (FAutoReconnect){
+    if (FAutoReconnect && FStartWorkingMode){
         FStatus = WORK_STATUS_DELAYCONNECT;
+        FSource = TEXT_MSG_SRC_CLIENT_NOTIFY;
+        FTextMessage = "Ready to reconnect to master...";
+        Synchronize(UpdateTextMessageUI);
     }else{
         FStatus = WORK_STATUS_WAIT;
+        FSource = TEXT_MSG_SRC_CLIENT_NOTIFY;
+        FTextMessage = "Ready to start...";
+        Synchronize(UpdateTextMessageUI);
     }
 
     //Reset all receive and send falg variant
@@ -147,6 +176,7 @@ void __fastcall MasterWorkThread::InitConnect(AnsiString ip, int port)
 }
 void __fastcall MasterWorkThread::StartWorking()
 {
+    FStartWorkingMode = true;
     if (FStatus == WORK_STATUS_WAIT){
         FStatus = WORK_STATUS_CONNECT;
     }
@@ -158,6 +188,7 @@ void __fastcall MasterWorkThread::StopWorking()
         FStatus == WORK_STATUS_WORKING){
         Close();
     }*/
+    FStartWorkingMode = false;
     FStatus = WORK_STATUS_STOP;
 }
 
@@ -167,18 +198,14 @@ __fastcall MasterWorkThread::~MasterWorkThread(void)
     if (FServerMode){ delete mServer; }
     else {delete mClient;}
     delete csVariant;
-    while(!queue->Empty()){
+    /*while(!queue->Empty()){
         Msg *pmsg = queue->Pop();
         delete pmsg;
     }
-    delete queue;
+    delete queue; */
     delete FMsgHandler;
 }
 
-IQueue* MasterWorkThread::GetQueue()
-{
-    return queue;
-}
 //---------------------------------------------------------------------------
 void __fastcall MasterWorkThread::Execute(void)
 {
@@ -227,56 +254,118 @@ void __fastcall MasterWorkThread::Execute(void)
     }
     logger.Log("Master Thread Exit.");
 }
-
+/*
 void MasterWorkThread::dispatchMsg(Msg* pmsg)
+{
+    dispatchMsg(NULL, pmsg);
+}
+void MasterWorkThread::dispatchMsg(ServerClientWorkThread* client, Msg* pmsg)
 {
     if (csWorkVar != NULL){
         try{
             csWorkVar->Enter();
-            dispatchMsgSafe(pmsg);
+            dispatchMsgSafe(client, pmsg);
         }__finally{
             csWorkVar->Leave();
         }
     }else{
-        dispatchMsgSafe(pmsg);
+        dispatchMsgSafe(client, pmsg);
     }
 }
 
-void MasterWorkThread::dispatchMsgSafe(Msg* pmsg)
+void MasterWorkThread::dispatchMsgSafe(ServerClientWorkThread* client, Msg* pmsg)
 {
     AnsiString dest = AnsiString(pmsg->to);
-    int idx = FThreadList->IndexOf(dest);
-    if (idx == -1){
-        logger.Log("Target " + dest + " has not found in configure list.");
+    if (FServerMode){
+        if (pmsg->msgtype == MSGTYPE_DATA){
+            // Find dest location and dispatch them
+            // At first, check inner alias
+            if (DispatchToInner(dest, &pmsg->rawmsg)){
+                delete pmsg;
+                return;
+            }
+            // then check outer alias list in client thread list
+            ServerClientWorkThread* thread;
+            map<DWORD, ServerClientWorkThread*>::iterator it;
+            for (it = mapClientThread.begin();
+                 it != mapClientThread.end();
+                 ++it){
+                 thread = it->second;
+                 if (thread != NULL){
+                    // allow one message send to mulitple channel
+                    if (thread->IsBelong(dest)){
+                        thread->Push(pmsg);
+                    }
+                 }
+            }
+        }else if (pmsg->msgtype == MSGTYPE_TAGLIST){
+            // Bind a new dest location set.
+            client->UpdateTagList(pmsg);
+        }
     }else{
-        WorkThread* thread = (WorkThread*)FThreadList->Objects[idx];
-        thread->Push(&pmsg->rawmsg);
-        //logger.Log("Push a message to " + dest);
+        // Receive from other master, dispatch to inner channel
+        if (DispatchToInner(dest, &pmsg->rawmsg)){
+            delete pmsg;
+        }else{
+            // Receive from inner channel dispatch to other master
+            queue->Push(pmsg);
+        }
     }
 }
 
+bool MasterWorkThread::DispatchToInner(AnsiString& dest, RawMsg* rawmsg)
+{
+    int idx = FThreadList->IndexOf(dest);
+    if (idx == -1){
+        return false;
+    }else{
+        WorkThread* thread = (WorkThread*)FThreadList->Objects[idx];
+        thread->Push(rawmsg);
+        return true;
+    }
+}
+*/
 void MasterWorkThread::LogRxMsg(Msg* pmsg)
 {
-    static char buffer[100];
-    if (pmsg == NULL){
-        snprintf(buffer, 100, "[Master]Tx:[NULL]");
-    }else{
-        snprintf(buffer, 100, "[Master]Rx:[%s->%s] L:%d", pmsg->from
-            , pmsg->to, (pmsg->rawmsg.len));
-    }
-    logger.Log(buffer);
+    LogMsg(pmsg, "Rx");
 }
 
 void MasterWorkThread::LogTxMsg(Msg* pmsg)
 {
+    LogMsg(pmsg, "Tx");
+}
+
+void MasterWorkThread::LogMsg(Msg* pmsg, char* tag)
+{
     static char buffer[100];
     if (pmsg == NULL){
         snprintf(buffer, 100, "[Master]Tx:[NULL]");
     }else{
-        snprintf(buffer, 100, "[Master]Tx:[%s->%s] L:%d", pmsg->from
-            , pmsg->to, (pmsg->rawmsg.len));
+        if (pmsg->msgtype == MSGTYPE_DATA){
+            snprintf(buffer, 100, "[Master]%s:[%s->%s] L:%d", tag, pmsg->from
+                , pmsg->to, (pmsg->rawmsg.len));
+        }else if(pmsg->msgtype == MSGTYPE_TAGLIST){
+            memset(buffer, 0, sizeof(buffer));
+            snprintf(buffer, 100, "[Master]%s:TAG LIST:", tag);
+            for (int i = 0; i < MAX_ALIAS_CNT; i++){
+                if (pmsg->taglist[i][0] == '\0') break;
+                strcpy(buffer + strlen(buffer), pmsg->taglist[i]);
+                strcpy(buffer + strlen(buffer), ",");
+                if (strlen(buffer) > 100 - ALIAS_LEN){
+                    break;
+                }
+            }
+        }else{
+            snprintf(buffer, 100, "[Master]%s:[UNKNOWN] L:%d", tag, pmsg->from
+                , pmsg->to, (pmsg->rawmsg.len));
+        }
     }
     logger.Log(buffer);
+}
+
+void MasterWorkThread::LogMsgStream(AnsiString& stream)
+{
+    logger.Log(stream.c_str());
 }
 
 bool __fastcall MasterWorkThread::isTerminated()
@@ -292,15 +381,40 @@ void __fastcall MasterWorkThread::onSocketConnect(System::TObject* Sender,
         + Socket->RemoteAddress + ":" + IntToStr(Socket->RemotePort)
         + "[" + IntToStr(::GetCurrentThreadId()) + "]");
 
+
     if (FOnOpenChannel != NULL){
-        FOnOpenChannel(NULL, true);
+        FOnOpenChannel(FCh, true);
     }
     if (!FServerMode){
         mClientPeer = Socket;
         pStream = new TWinSocketStream(mClientPeer, 100);
+
+        FMsgHandler->getChannel()->setAlias("*");
+        FMsgHandler->getChannel()->Open();
+        // Add tag list msg to queue on connection has build
+        Msg* msg = new Msg();
+        BuildTagListMsg(msg);
+
+        bool succflag = FController->dispatchMsg(FMsgHandler->getChannel(), msg);
+        if (succflag){
+            LogMsg("Send channel tag list success.");
+        }else{
+            LogMsg("Send channel tag list failed.");
+        }
     }
+
     FStatus = WORK_STATUS_WORKING;
 }
+
+void MasterWorkThread::BuildTagListMsg(Msg* msg)
+{
+    if (FThreadList != NULL && FThreadList->Count > 0){
+        for (int i = 0; i < FThreadList->Count; i++){
+            strcpy(msg->taglist[i], FThreadList->Strings[i].c_str());
+        }
+    }
+}
+
 void __fastcall MasterWorkThread::onSocketDisconnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
@@ -308,23 +422,35 @@ void __fastcall MasterWorkThread::onSocketDisconnect(System::TObject* Sender,
             + ":" + IntToStr(Socket->RemotePort)
             + "[" + IntToStr(::GetCurrentThreadId()) + "]");
 
+    
     if (FServerMode){
-        currSocketThread = NULL;
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(NULL, true);
+        DWORD threadid = ::GetCurrentThreadId();
+        map<DWORD, ServerClientWorkThread*>::iterator it;
+        it = mapClientThread.find(threadid);
+        if (it != mapClientThread.end()){
+            mapClientThread.erase(it);
+            currSocketThread = NULL;
+        }else{
+            LogMsg("Exception: No thread id found.");
         }
+        UpdateConnectStatus();
     }else{
-        if (FAutoReconnect){
+        if (FStartWorkingMode && FAutoReconnect){
             FStatus = WORK_STATUS_DELAYCONNECT;
             FSource = TEXT_MSG_SRC_CLIENT_NOTIFY;
             FTextMessage = "Wait to reconnect...";
             Synchronize(UpdateTextMessageUI);
+            UpdateConnectStatus();
         }else{
             FStatus = WORK_STATUS_WAIT;
             if (FOnCloseChannel != NULL){
-                FOnCloseChannel(NULL, true);
+                FOnCloseChannel(FCh, true);
             }
-        }   
+        }      
+        if (pStream != NULL){
+            delete pStream;
+            pStream = NULL;
+        }
     }
 }
 void __fastcall MasterWorkThread::onSocketRead(System::TObject* Sender,
@@ -349,7 +475,7 @@ void __fastcall MasterWorkThread::onSocketError(System::TObject* Sender,
         }
     }else{
         if (FOnCloseChannel != NULL){
-            FOnCloseChannel(NULL, true);
+            FOnCloseChannel(FCh, true);
         }
     }
     CloseClientConnection();
@@ -358,31 +484,28 @@ void __fastcall MasterWorkThread::onSocketError(System::TObject* Sender,
 void __fastcall MasterWorkThread::onServerListen(TObject *Sender, TCustomWinSocket *Socket)
 {
     if (OnServerOpen != NULL){
-        OnServerOpen(NULL, true);
+        OnServerOpen(FCh, true);
     }
     LogMsg("Master server port has opened.");
 }
 //---------------------------------------------------------------------------
 void MasterWorkThread::LogMsg(AnsiString msg)
 {
-    logger.Log("[Master]\t" + msg);
+    logger.Log("[Master-" + IntToStr(FCh) + "," + IntToStr(::GetCurrentThreadId()) + "]\t" + msg);
 }
 void __fastcall MasterWorkThread::onServerAccept(TObject *Sender, TCustomWinSocket *Socket)
 {
     LogMsg(AnsiString("Starting to accept a new connection.")
         + "[" + IntToStr(::GetCurrentThreadId()) + "]");
-    CloseClientConnection();
+    //CloseClientConnection();
 
-    //Notify UI
-    FSource = TEXT_MSG_SRC_CLIENT_INFO;
-    FTextMessage = Socket->RemoteHost;
-    Synchronize(UpdateTextMessageUI);
+    
 }
 
 void __fastcall MasterWorkThread::UpdateTextMessageUI(void)
 {
     if (FOnTextMessage){
-        FOnTextMessage(FSource, FTextMessage);
+        FOnTextMessage(FCh, FSource, FTextMessage);
     }
 }
 
@@ -409,10 +532,61 @@ void __fastcall MasterWorkThread::onGetThread(System::TObject* Sender,
 {
     LogMsg(AnsiString("Master create client work thread.")
         + "[" + IntToStr(::GetCurrentThreadId()) + "]");
-    SocketThread = currSocketThread = new ServerClientWorkThread(ClientSocket, this);
+    SocketThread = currSocketThread = new ServerClientWorkThread(this,
+        ClientSocket, FController);
+    mapClientThread[SocketThread->ThreadID]  = currSocketThread;
+
+    //Notify UI
+    UpdateConnectStatus();
 }
 //---------------------------------------------------------------------------
+void __fastcall MasterWorkThread::UpdateConnectStatus()
+{
+    //if (mapClientThread.size() > 0){
+        FSource = TEXT_MSG_SRC_CLIENT_COUNT;
+        FTextMessage = IntToStr(mapClientThread.size());
+        Synchronize(UpdateTextMessageUI);
+    //}else{
+    //}
+}
+//---------------------------------------------------------------------------
+void MasterWorkThread::Push(Msg* pmsg)
+{
+    /*if (queue != NULL){
+        queue->Push(pmsg);
+    }*/
+}
 
+int MasterWorkThread::GetChannelPriority()
+{
+    if (FServerMode){
+        if (mapClientThread.size() == 0) return 0;
+        int totalPri = 0;
+        map<DWORD, ServerClientWorkThread*>::iterator it;
+        for (it = mapClientThread.begin();
+             it != mapClientThread.end();
+             ++it){
+             totalPri += it->second->GetChannelPriority();
+        }
+        return totalPri / mapClientThread.size();
+    }else{
+        return FMsgHandler->getChannel()->getPriority();
+    }
+}
 
-
-
+void MasterWorkThread::UdateChannelErrorMode(const master_config_t* config)
+{
+    if (FServerMode){
+        if (mapClientThread.size() == 0) return;
+        map<DWORD, ServerClientWorkThread*>::iterator it;
+        for (it = mapClientThread.begin();
+             it != mapClientThread.end();
+             ++it){
+             it->second->UdateChannelErrorMode(config);
+        }
+    }else{
+        if (FMsgHandler != NULL){
+            FMsgHandler->UdateChannelErrorMode(config);
+        }
+    }
+}

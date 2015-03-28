@@ -6,6 +6,8 @@
 #include "UMasterMessageHandler.h"
 #include "LogFileEx.h"
 #include "UMasterWorkThread.h"
+#include "Tools.h"
+#include "UAlgorithm.h"
 //---------------------------------------------------------------------------
 
 #pragma package(smart_init)
@@ -14,10 +16,18 @@ extern LogFileEx logger;
 
 
 MasterMessageHandler::MasterMessageHandler(
-        MasterWorkThread* master)
+        MasterWorkThread* master,
+        ServerClientWorkThread* clientthread,
+        Controller* controller)
 {
-    this->FMaster = master;
-    queue = FMaster->GetQueue();
+    FQueue = new MsgQueue();
+    FMaster = master;
+    
+    FClientThread = clientthread;
+    FController = controller;
+    FChannel = FController->registerChannel("", this, 0);
+    FChannel->Open();
+    FChannel->setPriority(FMaster->Priority);
 
     receivePos = 0;
     messageLen = 0;
@@ -30,22 +40,31 @@ MasterMessageHandler::MasterMessageHandler(
     lastReportTick = 0;
 
     recvStatus = NET_MASTER_RECV_HEAD;
-}
 
+    FConfig.errorModeIdx = ERROR_MODE_NOERROR_IDX;
+    FSeed = 100;
+    FMsgCnt = 0;
+}
+MasterMessageHandler::~MasterMessageHandler()
+{
+    FController->unregisterChannel(FChannel);
+    delete FQueue;
+}
 //---------------------------------------------------------------------------
 void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
         TWinSocketStream *stream)
 {
     if (client != NULL ){
-        if (sendMessageLen == 0 && !queue->Empty()){
+        if (sendMessageLen == 0 && !FQueue->Empty()){
             //logger.Log("Pop a Message");//, Queue Count is " + IntToStr(queue->Count()));
-            Msg *pmsg = queue->Pop();
+            Msg *pmsg = FQueue->Pop();
             //logger.Log("Get a message.");
             // build message
             sendMessageLen = BuildNetMessage(pmsg, sendBuf, NETMESSAGE_MAX_LEN);
-            // logger
-            FMaster->LogTxMsg(pmsg);
             delete pmsg;
+
+            //Generate error data
+            ApplyErrorModeOnData(sendBuf, sendMessageLen);
         }
         try{
             if (!client->Connected || (sendMessageLen - sendPos) == 0) return;
@@ -61,8 +80,9 @@ void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
                 sendMessageLen = 0;
                 sendPos = 0;
             }
-        }catch(...){
-            logger.Log("Wait for data to write failure.");
+        }catch(Exception& e){
+            logger.Log("Wait for data to write failure." + e.Message);
+            FChannel->Close();
             client->Close();
         }
     }
@@ -76,15 +96,17 @@ int MasterMessageHandler::getDataFromSock(
         try{
             if (stream->WaitForData(1)){
                 if(!client->Connected)  return CODE_CONN_CLOSE;
-                if(FMaster->isTerminated()) return CODE_THREAD_TERMINATE;
+                //if(FMaster->isTerminated()) return CODE_THREAD_TERMINATE;
 
                 int rvLen = stream->Read(buffer + offset, len);
-                if (rvLen < 0){
+                if (rvLen <= 0){
                     LogMsg("Peer close stream.");
+                    FChannel->Close();
                     client->Close();
                     return CODE_CONN_CLOSE;
                 }
                 offset += rvLen;
+                rxMsgCnt += rvLen;
                 if (offset == len){
                     return len;
                 }else{
@@ -93,8 +115,9 @@ int MasterMessageHandler::getDataFromSock(
             }else{
                 return 0;
             }
-        }catch(...){
-            logger.Log("Master read error.");
+        }catch(Exception& e){
+            logger.Log("Master read error." + e.Message);
+            FChannel->Close();
             client->Close();
             return NULL;
         }
@@ -119,10 +142,30 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
         
         if (!IS_NET_MESSAGE_HEAD(receiveBuf)){
             LogMsg("Invalid messgae head.");
+            FChannel->decPriority();
             //Continue to receive message head
             break;
         }
         receivePos = NET_MESSAGE_HEAD_LEN;
+        recvStatus = NET_MASTER_RECV_CMD;
+        //pass through
+    case NET_MASTER_RECV_CMD:
+        rv = getDataFromSock(client, stream,
+                receiveBuf + receivePos, NET_MESSAGE_CMD_LEN, FOffset);
+        if (rv != NET_MESSAGE_CMD_LEN){
+            break;
+        }
+        FOffset = 0;
+
+        if (!IS_NET_MESSAGE_CMD(receiveBuf, receivePos)){
+            LogMsg("Invalid messgae command.");
+            FChannel->decPriority();
+            //Continue to receive message head
+            recvStatus = NET_MASTER_RECV_HEAD;
+            break;
+        }
+
+        receivePos += NET_MESSAGE_CMD_LEN;
         recvStatus = NET_MASTER_RECV_LEN;
         //pass through
     case NET_MASTER_RECV_LEN:
@@ -136,8 +179,10 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
         messageLen = NETMESSAGE_LEN(receiveBuf, receivePos);
         if (messageLen < NETMESSAGE_MIN_LEN
             || messageLen > NETMESSAGE_MAX_LEN){
+            FChannel->decPriority();
             LogMsg("Invalid message len.[" + IntToStr(NETMESSAGE_MIN_LEN)
                 + "," + IntToStr(NETMESSAGE_MAX_LEN));
+            recvStatus = NET_MASTER_RECV_HEAD;
             break;
         }
         receivePos += NETMESSAGE_LEN_LEN;
@@ -146,16 +191,21 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
     case NET_MASTER_RECV_DATA:
         rv = getDataFromSock(client, stream,
                 receiveBuf + receivePos, messageLen
-                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN, FOffset);
+                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN - NET_MESSAGE_CMD_LEN, FOffset);
         if (rv != messageLen
-                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN){
+                - NET_MESSAGE_HEAD_LEN - NETMESSAGE_LEN_LEN - NET_MESSAGE_CMD_LEN){
             break;
         }
 
         // get a message, neet to post to queue
         pmsg = ResloveNetMessage(receiveBuf, messageLen);
+        if (pmsg->validedOK){
+            FChannel->incPriority();
+        }else{
+            FChannel->decPriority();
+        }
         // logger
-        FMaster->LogRxMsg(pmsg);
+        //FMaster->LogRxMsg(pmsg);
 
         FOffset = 0;
         recvStatus = NET_MASTER_RECV_HEAD;
@@ -179,11 +229,15 @@ void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
             client->Lock();
             Msg* pmsg = onReceiveMessage(client, stream);
             if (pmsg != NULL){
-                // logger
-                FMaster->LogRxMsg(pmsg);
-                // dispathch to work thread
-                FMaster->dispatchMsg(pmsg);
-                delete pmsg;
+                if (pmsg->msgtype == MSGTYPE_TAGLIST){
+                    FChannel->setAlias((const char**)pmsg->taglist);
+                    delete pmsg;
+                }else{
+                    // logger
+                    //FMaster->LogRxMsg(pmsg);
+                    // dispathch to work thread
+                    FController->dispatchMsg(FChannel, pmsg);
+                }
             }
             // write message to peer
             if (client != NULL && client->Connected){
@@ -196,11 +250,11 @@ void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
         // Every second report receive and send message count
         if (::GetTickCount() - lastReportTick >= 100){
             if (FMaster->OnTxMsg != NULL && txMsgCnt > 0){
-                FMaster->OnTxMsg(FMaster, txMsgCnt);
+                FMaster->OnTxMsg(FMaster->Channel, txMsgCnt);
                 txMsgCnt = 0;
             }
             if (FMaster->OnRxMsg != NULL && rxMsgCnt > 0){
-                FMaster->OnRxMsg(FMaster, rxMsgCnt);
+                FMaster->OnRxMsg(FMaster->Channel, rxMsgCnt);
                 rxMsgCnt = 0;
             }
             lastReportTick = ::GetTickCount();
@@ -216,4 +270,69 @@ void MasterMessageHandler::LogMsg(AnsiString msg)
 {
     logger.Log("Master Handler[" + IntToStr(GetCurrentThreadId())
         + "]\t" + msg);
+}
+
+void MasterMessageHandler::Push(Msg* pmsg)
+{
+    FQueue->Push(pmsg);
+}
+
+Channel* MasterMessageHandler::getChannel()
+{
+    return FChannel;
+}
+
+void MasterMessageHandler::UdateChannelErrorMode(const master_config_t* config)
+{
+    if (config != NULL){
+        if (FConfig.errorModeIdx != config->errorModeIdx){
+            FMsgCnt = 0; // Clear count
+            FErrorHitIdx = getRandRange(1, FConfig.uniformErrorVal);
+        }
+        FConfig = *config;
+    }
+}
+
+void MasterMessageHandler::ApplyErrorModeOnData(unsigned char* buffer, int len)
+{
+    switch(FConfig.errorModeIdx){
+    case ERROR_MODE_NOERROR_IDX:
+        break;
+    case ERROR_MODE_UNIFORM_IDX:
+        FMsgCnt++;
+        if (FMsgCnt == FErrorHitIdx){
+            buffer[FErrorHitIdx % len] = 0; // Set error data
+            LogMsg("Generate a error in message position " + IntToStr(FErrorHitIdx % len));
+        }else if(FMsgCnt >= FConfig.uniformErrorVal){
+            FMsgCnt = 0;
+            // Gernerate a new rand(Uniform distribution) index using
+            // current error val, as say 1000
+            // The error will be insert, for say in 456 messages
+            FErrorHitIdx = getRandRange(1, FConfig.uniformErrorVal);
+            LogMsg("Create a error mode in " + IntToStr(FErrorHitIdx));
+        }
+        break;
+    case ERROR_MODE_POSSION_IDX:
+        FErrorHitIdx = getRandRange(1, 100);
+        // In possion mode, the error distribution will generate every sending
+        // the rand range will generate a data between 1 - 100,
+        // and as possion distribution
+        if (FErrorHitIdx > FConfig.possionErrorVal){
+            buffer[FErrorHitIdx % len] = 0; // Set error data
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+int MasterMessageHandler::getRandRange(int from , int to)
+{
+    if (FConfig.errorModeIdx == ERROR_MODE_UNIFORM_IDX){
+        return from + 0.5 + ran1(&FSeed) * (to - from);
+    }else if(FConfig.errorModeIdx == ERROR_MODE_POSSION_IDX){
+        return from + 0.5 + poidev((to - from)/2, &FSeed);
+    }else{
+        return from;
+    }
 }

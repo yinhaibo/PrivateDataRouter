@@ -57,7 +57,8 @@ protected:
 
 public:
     ServerWorkThread(const device_config_t* pDevCfg,
-            IQueue* masterQueue, const AnsiString& name);
+            const AnsiString& name,
+            Controller* mController);
     virtual __fastcall ~ServerWorkThread();    
 };
 

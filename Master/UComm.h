@@ -51,6 +51,19 @@ typedef struct _device_config_t{
     int iMaxMsgQueue;       // Max Message queue size
 }device_config_t;
 
+
+
+typedef struct master_config_t{
+    int errorModeIdx;
+    int uniformErrorVal;
+    int possionErrorVal;
+}master_config_t;
+
+
+#define ERROR_MODE_NOERROR_IDX 0
+#define ERROR_MODE_UNIFORM_IDX 1
+#define ERROR_MODE_POSSION_IDX 2
+
 //---------------------------------------------------------------------------
 // Message define
 #define MAX_CONTENT_LEN 10
@@ -72,7 +85,7 @@ typedef struct _message_t{
     unsigned short len;             // Message length
     unsigned char  tag;             // Message tag, for indentified message which is
                                     // sending by self.
-    unsigned char  seq;             // Sequence of message
+    unsigned int  seq;             // Sequence of message
     timestamp_t   timestamp;        // Timestamp of message
     unsigned char clen;             // Message content length
     char content[MAX_CONTENT_LEN];  // Message content
