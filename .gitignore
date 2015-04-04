@@ -31,6 +31,9 @@
 *.out
 *.app
 
+# Temporary files
+*.cgl
+
 # =========================
 # Operating System Files
 # =========================

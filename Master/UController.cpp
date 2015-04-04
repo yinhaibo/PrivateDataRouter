@@ -29,6 +29,9 @@ int Channel::getPriority()
 void Channel::setPriority(const int val)
 {
     priority = val;
+    char buf[50];
+    snprintf(buf, 50, "%s update priority %d", aliasString.c_str(), priority);
+    logger.Log(buf);
 }
 
 bool Channel::isOpen()
@@ -127,11 +130,17 @@ void Channel::incPriority()
 {
     priority++;
     if (priority == 0x80000000) priority = 0x0FFFFFFF;
+    char buf[50];
+    snprintf(buf, 50, "%s Inc priority %d", aliasString.c_str(), priority);
+    logger.Log(buf);
 }
 void Channel::decPriority()
 {
     priority--;
     if (priority == 0x80000000) priority = 0x80000000;
+    char buf[50];
+    snprintf(buf, 50, "%s Dec priority %d", aliasString.c_str(), priority);
+    logger.Log(buf);
 }
 const AnsiString& Channel::getAliasString() const
 {
@@ -179,47 +188,71 @@ void Controller::unregisterChannel(Channel* channel)
     delete channel;
 }
 
-bool Controller::dispatchMsg(Msg* pmsg)
+Channel* Controller::dispatchMsg(Msg* pmsg)
 {
     return dispatchMsg(NULL, pmsg);
 }
-bool Controller::dispatchMsg(Channel* channel, Msg* pmsg)
+Channel* Controller::dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch)
 {
-    bool rv = false;
+    Channel* rv = 0;
     if (csWorkVar != NULL){
         try{
             csWorkVar->Enter();
-            rv = dispatchMsgSafe(channel, pmsg);
+            rv = dispatchMsgSafe(channel, pmsg, lastch);
         }__finally{
             csWorkVar->Leave();
         }
     }else{
-        rv = dispatchMsgSafe(channel, pmsg);
+        rv = dispatchMsgSafe(channel, pmsg, lastch);
     }
 
     return rv;
 }
 
-bool Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg)
+Channel* Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch)
 {
     AnsiString dest = AnsiString(pmsg->to);
+    Channel* selectCh = NULL;
     bool dispatchSucc = false;
+    
     if (pmsg->msgtype == MSGTYPE_DATA){
-        Channel* selectCh = NULL;
         Channel* currentCh;
         int maxPriority = 0x80000000; //Min priority
         list<Channel*>::iterator it;
+
+        bool selectNext = false;
+        Channel* firstCH = NULL;
         for (it = lstChannel.begin();
              it != lstChannel.end();
              ++it){
              currentCh = *it;
              if (currentCh != NULL && currentCh->hasAlias(dest.c_str())){
-                if (currentCh->getPriority() > maxPriority){
-                    maxPriority = currentCh->getPriority();
+                if (firstCH == NULL){
+                    firstCH = currentCh;
+                }
+                if (selectNext){
                     selectCh = currentCh;
+                    break;
+                }
+                if (lastch == NULL){
+                    // default to using priority
+                    if (currentCh->getPriority() > maxPriority){
+                        maxPriority = currentCh->getPriority();
+                        selectCh = currentCh;
+                    }
+                }else{
+                    // using index instead of priority
+                    if (lastch == currentCh){
+                        selectNext = true;
+                    }
                 }
              }
         }
+        if (selectNext && selectCh == NULL){
+            // Need to select the first channel
+            selectCh = firstCH;
+        }
+
         if (selectCh != NULL){
             // allow send to channel which has highest priority
             // and the channel has opened
@@ -247,14 +280,18 @@ bool Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg)
         }else{
             LogMsg(channel, NULL, pmsg, "not open");
         }
+        selectCh = channel;
     }
 
     if (!dispatchSucc){
         // !!!Message discard...
+        char buff[40];
+        snprintf(buff, 40, "discard Msg:%08ul", pmsg->msgid);
+        logger.Log(buff);
         delete pmsg;
     }
 
-    return dispatchSucc;
+    return selectCh;
 }
 
 void Controller::LogMsg(const Channel* fromch, const Channel* toch,
@@ -275,3 +312,48 @@ void Controller::LogMsg(const Channel* fromch, const Channel* toch,
 
     logger.Log(buffer);
 }
+
+bool Controller::incChannelPriority(Channel* channel)
+{
+    Channel* selectItem;
+    if (channel == NULL) return false;
+    list<Channel*>::iterator it;
+    try{
+        csWorkVar->Enter();
+        for(it = lstChannel.begin();
+            it != lstChannel.end();
+            ++it){
+            selectItem = *it;
+            if (channel == selectItem){
+                channel->incPriority();
+                return true;
+            }
+        }
+    }__finally{
+        csWorkVar->Leave();
+    }
+    return false;
+}
+
+bool Controller::decChannelPriority(Channel* channel)
+{
+    Channel* selectItem;
+    if (channel == NULL) return false;
+    list<Channel*>::iterator it;
+    try{
+        csWorkVar->Enter();
+        for(it = lstChannel.begin();
+            it != lstChannel.end();
+            ++it){
+            selectItem = *it;
+            if (channel == selectItem){
+                channel->decPriority();
+                return true;
+            }
+        }
+    }__finally{
+        csWorkVar->Leave();
+    }
+    return false;
+}
+

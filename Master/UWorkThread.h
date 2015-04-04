@@ -79,7 +79,9 @@ private:
     TErrMsgEvent FOnErrMsg;
     int FTag;
     bool FActiveMode;
-
+    
+    DWORD FReSendInterval;
+    DWORD FMsgSendTick;
 
 
     DWORD lastReportTick;
@@ -101,9 +103,13 @@ private:
 
 
     void processMessage();
+
+    void sendLocalMessage(Msg* pmsg);
+    void successTransMessage(Msg* pmsg);
+    void reinitMessageCntVariant();
 protected:
     // Configure
-    const device_config_t* mpDevCfg;
+    device_config_t* mpDevCfg;
     long FSeed;
     
     AnsiString FName; //The message will be sent
@@ -112,8 +118,11 @@ protected:
     // Current message sequence which received from simulator
     unsigned int FCurrentMsgSeq;
     unsigned int FPrevMsgSeq;
+    unsigned short FCurrentMsgCRC;
+    unsigned short FPrevMsgCRC;
     Msg* FPrevMsg; // Old message which has sent, keep for resent by master
     bool FLocalMessage;
+    Channel* FDispatchChannel;
     
     work_status_t FStatus; // Current work status
                            // Wait, Connect, working, stop
@@ -168,7 +177,7 @@ protected:
 
     int __fastcall getRandRange(int from , int to);
 public:
-    __fastcall WorkThread(const device_config_t* pDevCfg,
+    __fastcall WorkThread(device_config_t* pDevCfg,
             const AnsiString& name,
             Controller* controller);
     __fastcall virtual ~WorkThread();

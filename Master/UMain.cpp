@@ -270,9 +270,9 @@ void TFMain::ReloadConfigure()
     TIniFile *ini;
     ini = new TIniFile( ChangeFileExt(Application->ExeName, ".INI" ) );
     int devicecnt = ini->ReadInteger("head", "DeviceCount", 0);
-    AnsiString name = ini->ReadString("head", "Name", "");
-    if (name.Length() > 0){
-        this->Caption = "Master - " + name;
+    FName = ini->ReadString("head", "Name", "");
+    if (FName.Length() > 0){
+        this->Caption = "Master - " + FName;
     }
     rbMasterClientMode->Checked = ini->ReadBool("Master", "ClientMode", true);
     rbMasterServerMode->Checked = !rbMasterClientMode->Checked;
@@ -446,9 +446,9 @@ void __fastcall TFMain::OperationButtonClick(TObject *Sender)
 //---------------------------------------------------------------------------
 WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
 {
-    list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+    list<device_config_t*>::iterator cit = lstDeviceConfig.begin();
         advance(cit, rowidx - 1); // Move ahead iSeq element
-    const device_config_t* pDevCfg = *cit;
+    device_config_t* pDevCfg = *cit;
 
     WorkThread* thread;
     if (pDevCfg->mode == WORK_MODE_SERIAL){
@@ -856,6 +856,7 @@ void __fastcall TFMain::UpdateMasterOpenStatus(TMessage* Msg)
         SetMasterCHConnections(ch, "1");
         SetMasterCHColor(ch, clGreen);
     }else{
+        UpdateChannelErrorMode(ch);
         lblListenStatus->Caption = "Channel " + IntToStr(ch) + " has a client connected.";
         SetMasterCHColor(ch, clGreen);
     }
@@ -940,6 +941,7 @@ void TFMain::StopAllThread()
 void TFMain::TerminateAllThread()
 {
     try{
+        tmrReconn->Enabled = false;
         csWorkVar->Enter();
         for (map<int, WorkItem>::iterator it = mWorkItems.begin();
             it != mWorkItems.end();
@@ -1114,18 +1116,21 @@ short TFMain::GetMasterCHPort(int ch)
     if (splitpos > 0){
         // maybe like ,7000,7100,7200
         AnsiString src = txtMasterPort->Text;
-        int prepos = 0;
+        int prepos = 1;
         int splitidx = 0;
+        int chidx = 0;
         for (int idx = 0; idx < src.Length(); idx++){
             if (src.c_str()[idx] == ','){
-                AnsiString portStr = txtMasterPort->Text.SubString(prepos, idx - prepos);
+                chidx++;
+                AnsiString portStr = txtMasterPort->Text.SubString(prepos, idx - prepos + 1);
                 if (ch == splitidx){
                     return StrToInt(portStr);
                 }
-                prepos = idx;
+                prepos = idx + 2;
                 splitidx++;
             }
         }
+        return StrToInt(txtMasterPort->Text.SubString(prepos, txtMasterPort->Text.Length())) + (ch - chidx);
     }
 
     // Only one port, or like 7000-, 7000-7002
@@ -1140,15 +1145,17 @@ short TFMain::GetPeerCHPort(int ch)
     if (splitpos > 0){
         // maybe like ,7000,7100,7200
         AnsiString src = txtPeerPort->Text;
-        int prepos = 0;
+        int prepos = 1;
         int splitidx = 0;
+        int chidx = 0;
         for (int idx = 0; idx < src.Length(); idx++){
             if (src.c_str()[idx] == ','){
-                AnsiString portStr = txtPeerPort->Text.SubString(prepos, idx - prepos);
+                chidx++;
+                AnsiString portStr = txtPeerPort->Text.SubString(prepos, idx - prepos + 1);
                 if (ch == splitidx){
                     return StrToInt(portStr);
                 }
-                prepos = idx;
+                prepos = idx + 2;
                 splitidx++;
             }
         }
@@ -1235,6 +1242,8 @@ void __fastcall TFMain::tmrReconnTimer(TObject *Sender)
     iChPri[0] = masterThread[0]->GetChannelPriority();
     iChPri[1] = masterThread[1]->GetChannelPriority();
     iChPri[2] = masterThread[2]->GetChannelPriority();
+    logger.Log("Priority:" + IntToStr(iChPri[0]) + ", "
+         + IntToStr(iChPri[1]) + ", " + IntToStr(iChPri[2]) + ", ");
     UpdateChannelPriUI();
 }
 //---------------------------------------------------------------------------
@@ -1376,3 +1385,85 @@ void TFMain::UpdateChannelErrorMode(int ch)
     if (ch <= 0 || ch > 3) return;
     masterThread[ch-1]->UdateChannelErrorMode(&masterConfig[ch-1]);
 }
+
+//---------------------------------------------------------------------------
+void __fastcall TFMain::SaveSimulateResult()
+{
+    txtResult->Lines->Clear();
+    AnsiString result;
+    char formatBuf[512];
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%8s %8s %8s %8s %8s %26s %26s %44s\r\n",
+        "","","","","",
+        "   Response Time(ms)  ",
+        "   Re-send Count      ",
+        "   Re-send Count of Times     ");
+    result = formatBuf;
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s %8s\r\n",
+        " Device ",
+        " Message",
+        "   Send ",
+        " Receive",
+        "   Error",
+        " Min", " Max", " Avg",
+        " Min", " Max", " Avg",
+        " [=0]", " [=1]", " [=2]", " [=3]", "[>=4]");
+    result += formatBuf;
+    snprintf(formatBuf, sizeof(formatBuf),
+        "%s %s %s\r\n",
+        "-------- -------- -------- -------- --------",
+        "-------- -------- -------- --------",
+        "-------- -------- -------- -------- -------- -------- --------");
+    result += formatBuf;
+    list<device_config_t*>::const_iterator cit = lstDeviceConfig.begin();
+    for(; cit != lstDeviceConfig.end(); ++cit){
+        const device_config_t* pDevCfg = *cit;
+        snprintf(formatBuf, sizeof(formatBuf),
+            "%8s %8d %8d %8d %8d %8d %8d %8.2f %8d %8d %8.2f %8d %8d %8d %8d %8d\r\n",
+            pDevCfg->source.c_str(), pDevCfg->msgMsgSent,
+            pDevCfg->msgTxCnt, pDevCfg->msgRxCnt, pDevCfg->msgErrCnt,
+            pDevCfg->dcRespTime.min, pDevCfg->dcRespTime.max, pDevCfg->dcRespTime.avg,
+            pDevCfg->dcResendCnt.min, pDevCfg->dcResendCnt.max, pDevCfg->dcResendCnt.avg,
+            pDevCfg->resendTotal[0], pDevCfg->resendTotal[1], pDevCfg->resendTotal[2],
+            pDevCfg->resendTotal[3], pDevCfg->resendTotal[4]
+        );
+        result += formatBuf;
+    }
+    txtResult->Text = result;
+    txtResult->Lines->SaveToFile("Master" + FName + "_Result.txt");
+}
+void __fastcall TFMain::btnResultClick(TObject *Sender)
+{
+    SaveSimulateResult();
+    TBitBtn *btn;
+    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
+        it != mWorkItems.end();
+        ++it){
+        btn = (*it).second.button;
+        btn->Visible = false;
+    }
+    txtResult->Visible = true;
+    txtResult->BringToFront();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::txtResultDblClick(TObject *Sender)
+{
+    txtResult->Visible = false;
+    TBitBtn *btn;
+    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
+        it != mWorkItems.end();
+        ++it){
+        btn = (*it).second.button;
+        btn->Visible = true;
+    }
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::tmrWriteResultTimer(TObject *Sender)
+{
+    SaveSimulateResult();    
+}
+//---------------------------------------------------------------------------
+

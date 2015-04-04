@@ -41,8 +41,8 @@ public:
 class IDispatcher
 {
 public:
-    virtual bool dispatchMsg(Channel* channel, Msg* pmsg) = 0;
-    virtual bool dispatchMsg(Msg* pmsg) = 0;
+    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL) = 0;
+    virtual Channel* dispatchMsg(Msg* pmsg) = 0;
 };
 
 class Controller : public IDispatcher
@@ -51,17 +51,19 @@ private:
     TCriticalSection* csWorkVar;
     list<Channel*> lstChannel;
     
-    bool dispatchMsgSafe(Channel* channel, Msg* pmsg);
+    Channel* dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch);
 
     void LogMsg(const Channel* fromch, const Channel* toch,
         const Msg* msg, AnsiString text);
 public:
-    virtual bool dispatchMsg(Channel* channel, Msg* pmsg);
-    virtual bool dispatchMsg(Msg* pmsg);
+    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL);
+    virtual Channel* dispatchMsg(Msg* pmsg);
 
     Channel* registerChannel(const AnsiString& aliasString, IMsgPush* executer,
             int priority);
     void unregisterChannel(Channel* channel);
+    bool incChannelPriority(Channel* channel);
+    bool decChannelPriority(Channel* channel);
 
     Controller();
     ~Controller();

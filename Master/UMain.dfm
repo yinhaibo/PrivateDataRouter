@@ -1,7 +1,7 @@
 object FMain: TFMain
   Left = 273
   Top = 116
-  Width = 870
+  Width = 913
   Height = 602
   Caption = 'Master'
   Color = clBtnFace
@@ -18,7 +18,7 @@ object FMain: TFMain
   object Splitter1: TSplitter
     Left = 0
     Top = 321
-    Width = 854
+    Width = 897
     Height = 3
     Cursor = crVSplit
     Align = alTop
@@ -30,18 +30,36 @@ object FMain: TFMain
   object GroupBox1: TGroupBox
     Left = 0
     Top = 0
-    Width = 854
+    Width = 897
     Height = 321
     Align = alTop
     Caption = 'Devices'
     TabOrder = 0
     DesignSize = (
-      854
+      897
       321)
+    object txtResult: TMemo
+      Left = 8
+      Top = 16
+      Width = 884
+      Height = 297
+      Anchors = [akLeft, akTop, akRight, akBottom]
+      Font.Charset = ANSI_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Consolas'
+      Font.Style = []
+      Lines.Strings = (
+        'txtResult')
+      ParentFont = False
+      TabOrder = 1
+      Visible = False
+      OnDblClick = txtResultDblClick
+    end
     object gridDevices: TStringGrid
       Left = 9
       Top = 17
-      Width = 840
+      Width = 883
       Height = 296
       Anchors = [akLeft, akTop, akRight, akBottom]
       ColCount = 7
@@ -53,7 +71,7 @@ object FMain: TFMain
   object Master: TGroupBox
     Left = 0
     Top = 324
-    Width = 854
+    Width = 897
     Height = 219
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
@@ -277,7 +295,7 @@ object FMain: TFMain
       OnClick = rbMasterClientModeClick
     end
     object rbMasterServerMode: TRadioButton
-      Left = 320
+      Left = 344
       Top = 16
       Width = 81
       Height = 17
@@ -343,7 +361,7 @@ object FMain: TFMain
       Text = '0'
     end
     object gboxServerMode: TGroupBox
-      Left = 320
+      Left = 344
       Top = 33
       Width = 529
       Height = 104
@@ -563,7 +581,7 @@ object FMain: TFMain
     object GroupBox2: TGroupBox
       Left = 4
       Top = 31
-      Width = 309
+      Width = 325
       Height = 106
       Caption = 'Client Mode'
       TabOrder = 10
@@ -653,6 +671,15 @@ object FMain: TFMain
         OnClick = chkAutoReconnClick
       end
     end
+    object btnResult: TButton
+      Left = 648
+      Top = 188
+      Width = 75
+      Height = 25
+      Caption = '&Result'
+      TabOrder = 11
+      OnClick = btnResultClick
+    end
   end
   object mnuMain: TMainMenu
     Left = 208
@@ -718,6 +745,12 @@ object FMain: TFMain
     Enabled = False
     OnTimer = tmrReconnTimer
     Left = 816
+    Top = 336
+  end
+  object tmrWriteResult: TTimer
+    Interval = 60000
+    OnTimer = tmrWriteResultTimer
+    Left = 848
     Top = 336
   end
 end

@@ -201,7 +201,6 @@ void __fastcall WorkThread::Execute()
                             }
                         }
                     }else{
-                        LogMsg(pmsg, "Receive message ERROR");
                         // Resonse message
                         // Just copy that and back it.
                         if (FPeerReady){

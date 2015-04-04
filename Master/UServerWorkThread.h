@@ -56,7 +56,7 @@ protected:
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len);
 
 public:
-    ServerWorkThread(const device_config_t* pDevCfg,
+    ServerWorkThread(device_config_t* pDevCfg,
             const AnsiString& name,
             Controller* mController);
     virtual __fastcall ~ServerWorkThread();    

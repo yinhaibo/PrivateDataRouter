@@ -1,78 +1,33 @@
-Error 00088. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x725D2C) was never deleted
-
-The object (0x00725D2C) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
-Error 00089. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x72FDEC) was never deleted
-
-The object (0x0072FDEC) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
-Error 00090. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x733C80) was never deleted
-
-The object (0x00733C80) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
-Error 00091. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x727F38) was never deleted
-
-The object (0x00727F38) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
-Error 00092. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x733F28) was never deleted
-
-The object (0x00733F28) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
-Error 00093. 0x300010 (Thread 0x0AB4):
-Resource leak: The object (0x715F10) was never deleted
-
-The object (0x00715F10) [size: 108 bytes] was created with new
-Call Tree:
-   0x00424FA8(=Master.exe:0x01:023FA8) D:\Projects\GitHub\PrivateDataRouter\Master\UMsgQueue.cpp#314
-   0x0042C9A1(=Master.exe:0x01:02B9A1) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#197
-   0x0042CBA3(=Master.exe:0x01:02BBA3) D:\Projects\GitHub\PrivateDataRouter\Master\UMasterMessageHandler.cpp#230
-   0x0042B2F3(=Master.exe:0x01:02A2F3) D:\Projects\GitHub\PrivateDataRouter\Master\UServerClientWorkThread.cpp#39
-   0x00454B0C(=Master.exe:0x01:053B0C)
-   0x00461FE7(=Master.exe:0x01:060FE7)
-
-------------------------------------------
+Functions called:
+ fflush (4 times)
+ free (7 times)
+ delete (20 times)
+ vsnprintf (12 times)
+ strcat (3 times)
+ strcmp (22 times)
+ snprintf (50 times)
+ new (21 times)
+ memset (17 times)
+ strcpy (7 times)
+ delete[] (4 times)
+ new[] (4 times)
+ atol (1 times)
+ SysReallocMem (83 times)
+ SysFreeMem (3160 times)
+ SysGetMem (3164 times)
+ lstrlenA (1 times)
+ lstrcpynA (4 times)
+ calloc (1 times)
+ strlen (136 times)
+ realloc (1 times)
+ strdup (1 times)
+ malloc (4 times)
+ memcpy (5 times)
+Resource types used:
+ object (21 allocs, 21 max)
+ object array (4 allocs, 3 max)
+ memory block (3171 allocs, 1142 max)
+Modules used:
+ 00400000 04/04/2015 21:50:08
+ D:\Projects\GitHub\PrivateDataRouter\Master\Master.exe
+==========================================

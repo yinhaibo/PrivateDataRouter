@@ -41,7 +41,7 @@ void __fastcall ClientWorkThread::ClientExecute(void)
     int iWriteBytes = 0;
     int iRecvStatus = CWT_SOCK_RECV_STATUS;
     unsigned char ucByte;
-    LogMsg("ClientWorkThread is running[" + IntToStr(GetCurrentThreadId()) + "]");
+    LogMsg("ClientWorkThread is running.");
     Event(seConnect);
     stream = new TWinSocketStream(ClientSocket, 500);
     while ((!this->Terminated) && (ClientSocket->Connected))
@@ -56,7 +56,7 @@ void __fastcall ClientWorkThread::ClientExecute(void)
                     if(!((!this->Terminated) && (ClientSocket->Connected)))  break;
                     try{
                         rdLen = stream->Read(ucaRecvBuff, DATA_OP_BUF_LEN);
-                        LogMsg("Read " + IntToStr(rdLen));
+                        //gMsg("Read " + IntToStr(rdLen));
                     }catch(Exception& e){
                         ClientSocket->Close();
                         break;
@@ -66,8 +66,8 @@ void __fastcall ClientWorkThread::ClientExecute(void)
                         ClientSocket->Close();
                         break;
                     }
-                    LogMsg("Wait for data:" + IntToStr(loopbuff_getlen(_lpbufRx, 0))
-                        + "," + IntToStr(loopbuff_getlen(_lpbufTx, 0)));
+                    //gMsg("Wait for data:" + IntToStr(loopbuff_getlen(_lpbufRx, 0))
+                    //  + "," + IntToStr(loopbuff_getlen(_lpbufTx, 0)));
                     iRecvStatus = CWT_BUFF_RECV_STATUS;
                 }
             }__finally{
@@ -83,7 +83,7 @@ void __fastcall ClientWorkThread::ClientExecute(void)
                         ucByte = ucaRecvBuff[iWriteBytes++];
                         loopbuff_push(_lpbufRx, ucByte);
                     }
-                    LogMsg("Read buffer:" + IntToStr(rdLen) + "," + IntToStr(iWriteBytes));
+                    //gMsg("Read buffer:" + IntToStr(rdLen) + "," + IntToStr(iWriteBytes));
                     if (iWriteBytes == rdLen){
                         iWriteBytes = 0;
                         iRecvStatus = CWT_SOCK_RECV_STATUS; // Temp buff data has sent
@@ -135,8 +135,7 @@ void __fastcall ClientWorkThread::ClientExecute(void)
     }//~while
     if (ClientSocket->Connected) ClientSocket->Close();
     delete stream;
-    LogMsg("ClientWorkThread end.["
-        + IntToStr(GetCurrentThreadId()) + "]");
+    LogMsg("ClientWorkThread end.");
 }
 __fastcall ClientWorkThread::~ClientWorkThread()
 {
@@ -144,6 +143,8 @@ __fastcall ClientWorkThread::~ClientWorkThread()
 }
 void ClientWorkThread::LogMsg(AnsiString msg)
 {
-    logger.Log("[Client:" + FName + "]\t" + msg);
+    char buffer[200];
+    snprintf(buffer, 200, "[%s(%u)]:%s", FName.c_str(), GetCurrentThreadId(), msg.c_str());
+    logger.Log(buffer);
 }
 #pragma package(smart_init)

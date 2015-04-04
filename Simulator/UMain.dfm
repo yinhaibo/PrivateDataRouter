@@ -1,6 +1,6 @@
 object FMain: TFMain
-  Left = 227
-  Top = 195
+  Left = 112
+  Top = 184
   Width = 1044
   Height = 414
   Caption = 'Device Simulator'
@@ -3124,6 +3124,13 @@ object FMain: TFMain
     355)
   PixelsPerInch = 96
   TextHeight = 13
+  object Label1: TLabel
+    Left = 928
+    Top = 96
+    Width = 94
+    Height = 13
+    Caption = 'Simulate Messages:'
+  end
   object gridDevices: TStringGrid
     Left = 0
     Top = 0
@@ -3178,43 +3185,6 @@ object FMain: TFMain
       FFF5ED94E39540EA74CADCA9FFE3C9FDE1C1FDDFBDFDE2C3FCE9D0FDF5ECFFFF
       FFFEFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFDE6F5E1C6F3D1F6F5E8FEF7ECFE
       F6ECFEF6EBFDF5E9FEF9F4FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF}
-  end
-  object btnSave: TBitBtn
-    Left = 928
-    Top = 102
-    Width = 92
-    Height = 25
-    Anchors = [akTop, akRight]
-    Caption = '&Save'
-    TabOrder = 4
-    OnClick = btnSaveClick
-    Glyph.Data = {
-      36030000424D3603000000000000360000002800000010000000100000000100
-      18000000000000030000120B0000120B00000000000000000000FFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFBF6F1EDC39EECAA74ECA66FE8BA95DFB599DF
-      B79DE0B394E0B291DEB292E4A77BE8A36BEECEB1FFFFFFFFFFFFFFFFFFEECBA8
-      F7A15AFE842EFE781AF2C9B4DEAFA6F1A273E3BDB7DCB4B2D9B8BAEC9363FD85
-      2CEB944BF2DFCEFFFFFFFFFFFFEFC8A0FEB578FF9748FF923BF6DCCDEFBAA3FF
-      8B2EF1CFC1E6CDD0E7D1D5F3A97FFF9545F5A765EED5BDFFFFFFFFFFFFF0CEAA
-      FDBA81FFA357FFA04DFAE4D6F4D4CAFCB075F4DBD5F0DDE0F0E0E6F9BC92FF9C
-      4FF6AF6FF0DAC3FFFFFFFFFFFFF2D2B2FDBF8AFFAF6CFFAA5BFEDDBEFBF3F4FA
-      F0EEFBEFECFBEEEBFBF2F0FDC393FFA45DF6B47BF1DBC6FFFFFFFFFFFFF3D6B7
-      FDC595FEB77CFEB679FFB87DFFC18DFFC18CFFBF8AFFBD89FFBB85FFAF6FFFAE
-      6DF6BA85F2DDC9FFFFFFFFFFFFF4DBC0FEC89BFEC798FDE0C4FEDEC0FEDABAFE
-      D7B7FED6B3FED5AFFED4ACFED0A6FFB87EF7C08FF3E0CCFFFFFFFFFFFFF6E0C7
-      FECEA4FEDCBEFDE7CBFEDCB5FED9B2FDD8AEFED4A9FED2A5FECE9DFDDBB6FFC7
-      97F7C496F4E2D0FFFFFFFFFFFFF8E4CDFED5ACFEE1C6FEE7CBFEDCB4FEDAB0FE
-      D8ABFED5A7FED1A2FECC9BFEDCB8FFCA9FF9CAA1F5E4D3FFFFFFFFFFFFF9E8D4
-      FEDAB6FEE6CFFEF3E2FDEACFFEE9CBFDE7C6FEE3C1FDE0BCFEDCB5FEE5C9FFCF
-      A7F9D1ACF7E7D6FFFFFFFFFFFFFAECDAFEDDBDFEEAD6FEF4E3FDEBCFFDE8CBFE
-      E6C6FEE3C0FDE0BBFFDCB4FEE9CEFED6AFFAD7B5F7E9D9FFFFFFFFFFFFFCEFDD
-      FDDFC0FEEBD7FEFAF1FFF6E4FEF5E1FFF1DBFEEFD7FEEBD1FEE8C9FDF0DCFFD9
-      B5FBD9B9F9EBDCFFFFFFFFFFFFFDEFDCFEEDDBFEF2E7FEFBF2FEF8E7FEF9E8FE
-      F7E7FEF6E4FEF3DFFEF1D8FEF6E9FEE9D6FAE5CFF9ECDBFEFFFFFFFFFFFEF5E9
-      FDF0DDFDF3E2FEF2E1FEF2E2FDF0E0FDF0DFFCEFDFFCEFDFFBEDDDFBEAD7FAEB
-      D9F9E3CBFDF7F0FFFFFFFFFFFFFEFFFFFFFCF8FEFBF6FFFBF6FFFAF6FEFAF5FE
-      FAF5FEF9F4FEF9F4FEF9F4FEF8F3FDF8F2FEFCFAFFFFFFFFFFFF}
   end
   object btnBatchAdd: TBitBtn
     Left = 928
@@ -3297,7 +3267,7 @@ object FMain: TFMain
     Height = 25
     Anchors = [akTop, akRight]
     Caption = '&Start all'
-    TabOrder = 5
+    TabOrder = 4
     OnClick = btnStartAllClick
     Glyph.Data = {
       36030000424D3603000000000000360000002800000010000000100000000100
@@ -3334,7 +3304,7 @@ object FMain: TFMain
     Height = 25
     Anchors = [akTop, akRight]
     Caption = '&Stop all'
-    TabOrder = 6
+    TabOrder = 5
     OnClick = btnStopAllClick
     Glyph.Data = {
       36030000424D3603000000000000360000002800000010000000100000000100
@@ -3371,7 +3341,7 @@ object FMain: TFMain
     Height = 17
     Anchors = [akTop, akRight]
     Caption = '&Active Mode'
-    TabOrder = 7
+    TabOrder = 6
     OnClick = chkActiveModeClick
   end
   object palPrompt: TPanel
@@ -3387,7 +3357,7 @@ object FMain: TFMain
     Font.Name = 'MS Sans Serif'
     Font.Style = []
     ParentFont = False
-    TabOrder = 8
+    TabOrder = 7
     Visible = False
   end
   object chkAutoReconn: TCheckBox
@@ -3397,7 +3367,7 @@ object FMain: TFMain
     Height = 17
     Anchors = [akTop, akRight]
     Caption = 'Auto &Reconnect'
-    TabOrder = 9
+    TabOrder = 8
     OnClick = chkAutoReconnClick
   end
   object btnResetCount: TBitBtn
@@ -3407,7 +3377,7 @@ object FMain: TFMain
     Height = 25
     Anchors = [akTop, akRight]
     Caption = '&Reset count'
-    TabOrder = 10
+    TabOrder = 9
     OnClick = btnResetCountClick
   end
   object TrackBar1: TTrackBar
@@ -3423,7 +3393,7 @@ object FMain: TFMain
     Position = 1
     SelEnd = 0
     SelStart = 0
-    TabOrder = 11
+    TabOrder = 10
     TickMarks = tmBottomRight
     TickStyle = tsAuto
   end
@@ -3439,7 +3409,7 @@ object FMain: TFMain
     Font.Name = 'Fixedsys'
     Font.Style = []
     ParentFont = False
-    TabOrder = 12
+    TabOrder = 11
     Visible = False
     OnDblClick = txtResultDblClick
   end
@@ -3450,8 +3420,18 @@ object FMain: TFMain
     Height = 25
     Anchors = [akTop, akRight]
     Caption = '&Result'
-    TabOrder = 13
+    TabOrder = 12
     OnClick = btnResultClick
+  end
+  object txtMessageCount: TEdit
+    Left = 952
+    Top = 112
+    Width = 65
+    Height = 21
+    Anchors = [akTop, akRight]
+    TabOrder = 13
+    Text = '1000'
+    OnChange = txtMessageCountChange
   end
   object MainMenu1: TMainMenu
     Left = 8

@@ -59,7 +59,6 @@ __published:	// IDE-managed Components
     TBitBtn *btnBatchAdd;
     TBitBtn *btnAddItem;
     TBitBtn *DeleteItem;
-    TBitBtn *btnSave;
     TBitBtn *btnStartAll;
     TBitBtn *btnStopAll;
     TCheckBox *chkActiveMode;
@@ -75,8 +74,9 @@ __published:	// IDE-managed Components
     TTimer *tmrWriteResult;
     TMemo *txtResult;
     TButton *btnResult;
+    TLabel *Label1;
+    TEdit *txtMessageCount;
     void __fastcall About1Click(TObject *Sender);
-    void __fastcall btnSaveClick(TObject *Sender);
     void __fastcall gridDevicesDblClick(TObject *Sender);
     void __fastcall gridDevicesTopLeftChanged(TObject *Sender);
     void __fastcall btnStartAllClick(TObject *Sender);
@@ -97,12 +97,14 @@ __published:	// IDE-managed Components
     void __fastcall txtResultDblClick(TObject *Sender);
     void __fastcall btnResultClick(TObject *Sender);
     void __fastcall tmrWriteResultTimer(TObject *Sender);
+    void __fastcall txtMessageCountChange(TObject *Sender);
 private:	// User declarations
     bool configModified;
     map<int, WorkItem> mWorkItems; // Work item information, key is sequence
                                    // Work item include operation buttion and threads
     list<device_config_t*> lstDeviceConfig; // Device configure list
     long seed;  // Random seed
+    unsigned int FMaxMessageSend;
 
     void __fastcall OperationButtonClick(TObject *Sender);
     WorkThread* __fastcall CreateWorkThread(int rowidx);

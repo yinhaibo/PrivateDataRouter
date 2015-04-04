@@ -5,12 +5,13 @@
 
 #include "UServerWorkThread.h"
 #include "LogFileEx.h"
+#include <stdio.h>
 //---------------------------------------------------------------------------
 
 #pragma package(smart_init)
 extern LogFileEx logger;
 //---------------------------------------------------------------------------
-ServerWorkThread::ServerWorkThread(const device_config_t* pDevCfg,
+ServerWorkThread::ServerWorkThread(device_config_t* pDevCfg,
             const AnsiString& name, Controller* controller)
     : WorkThread(pDevCfg, name, controller)
 {
@@ -131,8 +132,10 @@ void __fastcall ServerWorkThread::onGetThread(TObject *Sender,
 void __fastcall ServerWorkThread::onSocketConnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
-    LogMsg("Socket connected:" + Socket->RemoteAddress + ", RemotePort:"
-        + IntToStr(Socket->RemotePort));
+    char buffer[100];
+    snprintf("Socket connected:%s, Remote port:%d", 100,
+        Socket->RemoteAddress.c_str(), Socket->RemotePort);
+    logger.Log(buffer);
     isConnected = true;
     StartOK();
 }
@@ -141,7 +144,9 @@ void __fastcall ServerWorkThread::onSocketDisconnect(System::TObject* Sender,
 {
     // This function will be called by ClientWorkThread
     // So, We just can record the status, do not change any Objects
-    LogMsg("Socket disconnected:" + IntToStr(Socket->RemotePort));
+    char buffer[100];
+    snprintf(buffer, 100, "Socket disconnected:%d", Socket->RemotePort);
+    logger.Log(buffer);
     isConnected = false;
     if (mServer != NULL && mServer->Active){
         StopOK();
@@ -159,7 +164,9 @@ void __fastcall ServerWorkThread::onSocketRead(System::TObject* Sender,
 void __fastcall ServerWorkThread::onSocketError(System::TObject* Sender,
     TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode)
 {
-    LogMsg("Socket error:" + IntToStr(Socket->RemotePort));
+    char buffer[100];
+    snprintf(buffer, 100, "Socket error:%d", Socket->RemotePort);
+    logger.Log(buffer);
     if (mServer != NULL){
         //currSocketThread->Terminate();
         //currSocketThread->WaitFor();

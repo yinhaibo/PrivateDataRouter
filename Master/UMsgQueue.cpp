@@ -264,9 +264,10 @@ Msg* ResloveNetMessage(
     usCrcCal = crc16_cal((unsigned char*)netmsgbuf, buflen - NETMESSAGE_CRC_LEN);
     usCrcData = GET_NETMESSAGE_CRC(netmsgbuf, buflen - NETMESSAGE_CRC_LEN);
     if (usCrcCal != usCrcData){
-        Msg *msg = new Msg();
-        msg->validedOK = false;
-        return msg;
+        // commit by yhb in 2015/03/30 19:52
+        // there is meaningless to reslove a error CRC record.
+        // Msg *pmsg = new Msg(false);
+        return NULL;
     }
     // read head
     if(!IS_NET_MESSAGE_HEAD(pread)){
@@ -311,18 +312,19 @@ Msg* ResloveNetMessage(
             szMsgLen -= szAliasLen;
             strncpy(to, alias, ALIAS_LEN);
 
-            return  new Msg(from, to, pread, szMsgLen);
+            Msg* pmsg = new Msg(from, to, pread, szMsgLen);
+            return pmsg;
         }else if(CMP_NET_MESSAGE_CMD(cmd, NET_MESSAGE_CMD_TAGLIST)){
             //alias + '\0' + alias + '\0' + ...
             int idx = 0;
-            Msg *msg = new Msg();
+            Msg *pmsg = new Msg();
             while(pread < netmsgbuf + buflen - NETMESSAGE_CRC_LEN){
-                strcpy(msg->taglist[idx], pread);
-                pread += strlen(msg->taglist[idx]) + 1;
+                strcpy(pmsg->taglist[idx], pread);
+                pread += strlen(pmsg->taglist[idx]) + 1;
                 idx++;
                 if (idx >= MAX_ALIAS_CNT) break;
             }
-            return msg;
+            return pmsg;
         }
         return NULL;
     }

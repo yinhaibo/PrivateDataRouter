@@ -101,6 +101,8 @@ protected:
     message_t mEOFMessage; 
     bool FPeerReady;
 
+    unsigned int FMaxMessageSend;
+
     message_t mReceiveMsgBuf;
     message_t mSendMsgBuf;
     int receivePos;
@@ -172,6 +174,7 @@ public:
     __property bool ActiveMode  = { read=FActiveMode, write=FActiveMode };
     __property AnsiString Name  = { read=FName, write=FName };
     __property long Seed  = { read=FSeed, write=FSeed };
+    __property unsigned int MaxMessageSend  = { read=FMaxMessageSend, write=FMaxMessageSend };
 };
 //---------------------------------------------------------------------------
 #endif

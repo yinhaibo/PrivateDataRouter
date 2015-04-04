@@ -132,6 +132,7 @@ WorkThread* __fastcall TFMain::CreateWorkThread(int rowidx)
         thread->OnErrMsg = onErrMsg;
         thread->OnMsgSeqUpdate = onMsgSeqUpdate;
         thread->ActiveMode = chkActiveMode->Checked;
+        thread->MaxMessageSend = FMaxMessageSend;
         return thread;
     }else{
         return NULL;
@@ -189,6 +190,8 @@ void TFMain::ReloadConfigure()
     chkActiveMode->Checked = ini->ReadBool("head", "Active", false);
     mnuActivePassive->Checked = chkActiveMode->Checked;
     chkAutoReconn->Checked = ini->ReadBool("head", "AutoReconnect", true);
+    FMaxMessageSend = ini->ReadInteger("head", "MessageCount", 1000);
+    txtMessageCount->Text = IntToStr(FMaxMessageSend);
 
     //Load device configure into lstDeviceConfig
     String sectionName;
@@ -282,6 +285,7 @@ void TFMain::SaveConfigure()
     ini->WriteInteger("head", "DeviceCount", devicecnt);
     ini->WriteBool("head", "Active", chkActiveMode->Checked);
     ini->WriteBool("head", "AutoReconnect", chkAutoReconn->Checked);
+    ini->WriteInteger("head", "MessageCount", FMaxMessageSend);
 
     String sectionName;
     int iSeq;
@@ -300,6 +304,7 @@ void TFMain::SaveConfigure()
         ini->WriteString(sectionName, "EOFMessage", pDevCfg->eofMessage);
     }
     delete ini;
+    configModified = false;
 }
 
 void __fastcall TFMain::UpdateUI()
@@ -395,11 +400,6 @@ void __fastcall TFMain::About1Click(TObject *Sender)
 //---------------------------------------------------------------------------
 
 
-void __fastcall TFMain::btnSaveClick(TObject *Sender)
-{
-    SaveConfigure();
-}
-//---------------------------------------------------------------------------
 // Double click to modify configure of device channel
 void __fastcall TFMain::gridDevicesDblClick(TObject *Sender)
 {
@@ -1020,6 +1020,20 @@ void __fastcall TFMain::btnResultClick(TObject *Sender)
 void __fastcall TFMain::tmrWriteResultTimer(TObject *Sender)
 {
     SaveSimulateResult();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::txtMessageCountChange(TObject *Sender)
+{
+    FMaxMessageSend = StrToInt(txtMessageCount->Text);
+    for (map<int, WorkItem>::iterator it = mWorkItems.begin();
+        it != mWorkItems.end();
+        ++it){
+        WorkThread* thread = (*it).second.thread;
+        if (thread != NULL){
+            thread->MaxMessageSend = FMaxMessageSend;
+        }
+    }
 }
 //---------------------------------------------------------------------------
 

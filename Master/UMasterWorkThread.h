@@ -148,7 +148,6 @@ public:
     __property bool AutoReconnect  = { read=FAutoReconnect, write=FAutoReconnect };
 
 
-    virtual void Push(Msg* pmsg);
     //virtual void dispatchMsg(ServerClientWorkThread* client, Msg* pmsg);
     //virtual void dispatchMsg(Msg* pmsg);
     

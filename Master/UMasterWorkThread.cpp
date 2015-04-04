@@ -392,10 +392,13 @@ void __fastcall MasterWorkThread::onSocketConnect(System::TObject* Sender,
         FMsgHandler->getChannel()->setAlias("*");
         FMsgHandler->getChannel()->Open();
         // Add tag list msg to queue on connection has build
-        Msg* msg = new Msg();
-        BuildTagListMsg(msg);
+        Msg* pmsg = new Msg();
+        char buff[40];
+        snprintf(buff, 40, "-->new Msg:%08ul", pmsg->msgid);
+        logger.Log(buff);
+        BuildTagListMsg(pmsg);
 
-        bool succflag = FController->dispatchMsg(FMsgHandler->getChannel(), msg);
+        bool succflag = FController->dispatchMsg(FMsgHandler->getChannel(), pmsg);
         if (succflag){
             LogMsg("Send channel tag list success.");
         }else{
@@ -491,7 +494,9 @@ void __fastcall MasterWorkThread::onServerListen(TObject *Sender, TCustomWinSock
 //---------------------------------------------------------------------------
 void MasterWorkThread::LogMsg(AnsiString msg)
 {
-    logger.Log("[Master-" + IntToStr(FCh) + "," + IntToStr(::GetCurrentThreadId()) + "]\t" + msg);
+    char buff[100];
+    snprintf(buff, 100, "[Master-%d,%d]\t%s", FCh, ::GetCurrentThreadId(), msg);
+    logger.Log(buff);
 }
 void __fastcall MasterWorkThread::onServerAccept(TObject *Sender, TCustomWinSocket *Socket)
 {
@@ -550,13 +555,6 @@ void __fastcall MasterWorkThread::UpdateConnectStatus()
     //}
 }
 //---------------------------------------------------------------------------
-void MasterWorkThread::Push(Msg* pmsg)
-{
-    /*if (queue != NULL){
-        queue->Push(pmsg);
-    }*/
-}
-
 int MasterWorkThread::GetChannelPriority()
 {
     if (FServerMode){

@@ -15,10 +15,13 @@ enum WorkMode{
 ////////////////////////////////////////////////////////////////
 // Message count structure
 typedef struct _device_count_t{
+    unsigned int val;
     unsigned int min;
     unsigned int max;
     float        avg;
 }device_count_t;
+#define MIN_COUNT_VALUE 0
+#define MAX_COUNT_VALUE 0xFFFFFFFF
 
 //Distribution Type
 typedef enum _error_mode_t
@@ -31,8 +34,10 @@ typedef enum _error_mode_t
 AnsiString GetDistributionDesc(error_mode_t distri);
 error_mode_t GetDistributionFromDesc(AnsiString desc);
 
+#define MAX_RETRANS_REC_CNT 5
 // Device parameter configure structure
-typedef struct _device_config_t{
+class device_config_t{
+public:
     // Message configure
     unsigned char seq;      // Device seqence, just for list
     AnsiString source;       // Device source alias
@@ -49,7 +54,44 @@ typedef struct _device_config_t{
     error_mode_t errorMode; // Error distribution mode
     int errorThreshold;     // Range [1-100], In poisson error mode only
     int iMaxMsgQueue;       // Max Message queue size
-}device_config_t;
+
+    // For count
+    unsigned int sendSeq;
+    unsigned short sendCRC; 
+    unsigned long sendTick;
+    // Message count, one success message including send a message and eof message
+    // and make sure the message have transfer correctly.
+    device_count_t dcResendCnt;  // the count of resend of message, min, max, avg
+    device_count_t dcRespTime; // the response time of message, min, max, avg
+    unsigned int resendTotal[MAX_RETRANS_REC_CNT];// 0,1,2,3 for resend times, 4 for > 3
+    unsigned long msgMsgSent; // the count of message
+    unsigned long msgTxCnt;  // the count of message have sent
+    unsigned long msgRxCnt;  // the count of message have received
+    unsigned long msgErrCnt; // The count of error message
+
+    device_config_t(){
+        sendSeq = 0;
+        sendTick = 0;
+
+        for (int i = 0; i < MAX_RETRANS_REC_CNT; i++){
+            resendTotal[i] = 0;
+        }
+        dcResendCnt.min = MAX_COUNT_VALUE;
+        dcResendCnt.max = MIN_COUNT_VALUE;
+        dcResendCnt.avg = 0.0f;
+        dcResendCnt.val = 0;
+
+        dcRespTime.min = MAX_COUNT_VALUE;
+        dcRespTime.max = MIN_COUNT_VALUE;
+        dcRespTime.avg = 0.0f;
+        dcRespTime.val = 0;
+
+        msgMsgSent = 0;
+        msgTxCnt = 0;
+        msgRxCnt = 0;
+        msgErrCnt = 0;
+    }
+};
 
 
 

@@ -130,6 +130,9 @@ __published:	// IDE-managed Components
     TLabel *Label1;
     TLabel *Label2;
     TLabel *Label3;
+    TMemo *txtResult;
+    TButton *btnResult;
+    TTimer *tmrWriteResult;
     void __fastcall Exit1Click(TObject *Sender);
     void __fastcall rbMasterClientModeClick(TObject *Sender);
     void __fastcall rbMasterServerModeClick(TObject *Sender);
@@ -147,7 +150,11 @@ __published:	// IDE-managed Components
     void __fastcall cboErrorValCH1Change(TObject *Sender);
     void __fastcall cboErrorValCH2Change(TObject *Sender);
     void __fastcall cboErrorValCH3Change(TObject *Sender);
+    void __fastcall btnResultClick(TObject *Sender);
+    void __fastcall txtResultDblClick(TObject *Sender);
+    void __fastcall tmrWriteResultTimer(TObject *Sender);
 private:	// User declarations
+    String FName;
     map<int, WorkItem> mWorkItems;
     TCriticalSection* csWorkVar;
     TStringList* lstThreadObj;
@@ -171,7 +178,7 @@ private:	// User declarations
     void SetAllThreadActive(bool active);
     // Edit item
     bool EditRow(int rowidx);
-    
+
     void __fastcall OperationButtonClick(TObject *Sender);
 
     // Trafic statisic
@@ -193,7 +200,7 @@ private:	// User declarations
     unsigned int mTxStartTick;
 
     // Channel priority
-    unsigned int iChPri[3];
+    int iChPri[3];
 
 
     // Callback function from work thread
@@ -239,6 +246,8 @@ private:	// User declarations
     void UpdateChannelPriUI();
     void UpdateChannelErrorMode(int ch);
     int GetMaxPriChannel();
+
+    void __fastcall SaveSimulateResult();
 public:		// User declarations
     __fastcall TFMain(TComponent* Owner);\
 

@@ -20,6 +20,10 @@ MasterMessageHandler::MasterMessageHandler(
         ServerClientWorkThread* clientthread,
         Controller* controller)
 {
+    char buff[40];
+    snprintf(buff, 40, "Thread %d's handler will be create.", ::GetCurrentThreadId());
+    logger.Log(buff);
+    
     FQueue = new MsgQueue();
     FMaster = master;
     
@@ -47,7 +51,17 @@ MasterMessageHandler::MasterMessageHandler(
 }
 MasterMessageHandler::~MasterMessageHandler()
 {
+    char buff[40];
+    snprintf(buff, 40, "Thread %d's handler will be delete.", ::GetCurrentThreadId());
+    logger.Log(buff);
     FController->unregisterChannel(FChannel);
+    if (FQueue->Count() > 0){
+        Msg* pmsg;
+        while(FQueue->Count() > 0){
+            pmsg = FQueue->Pop();
+            delete pmsg;
+        }
+    }
     delete FQueue;
 }
 //---------------------------------------------------------------------------
@@ -61,6 +75,9 @@ void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
             //logger.Log("Get a message.");
             // build message
             sendMessageLen = BuildNetMessage(pmsg, sendBuf, NETMESSAGE_MAX_LEN);
+            //char buff[40];
+            //snprintf(buff, 40, "-->delete Msg:%08ul", pmsg->msgid);
+            //logger.Log(buff);
             delete pmsg;
 
             //Generate error data
@@ -199,7 +216,7 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
 
         // get a message, neet to post to queue
         pmsg = ResloveNetMessage(receiveBuf, messageLen);
-        if (pmsg->validedOK){
+        if (pmsg != NULL && pmsg->validedOK){
             FChannel->incPriority();
         }else{
             FChannel->decPriority();
@@ -228,9 +245,16 @@ void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
         try{
             client->Lock();
             Msg* pmsg = onReceiveMessage(client, stream);
+
             if (pmsg != NULL){
+                char buff[40];
+                snprintf(buff, 40, "Net--> New Msg:%08ul", pmsg->msgid);
+                logger.Log(buff);
                 if (pmsg->msgtype == MSGTYPE_TAGLIST){
                     FChannel->setAlias((const char**)pmsg->taglist);
+                    char buff[40];
+                    snprintf(buff, 40, "delete Msg:%08ul", pmsg->msgid);
+                    logger.Log(buff);
                     delete pmsg;
                 }else{
                     // logger
@@ -285,6 +309,7 @@ Channel* MasterMessageHandler::getChannel()
 void MasterMessageHandler::UdateChannelErrorMode(const master_config_t* config)
 {
     if (config != NULL){
+        LogMsg("Update error mode to " + IntToStr(config->errorModeIdx));
         if (FConfig.errorModeIdx != config->errorModeIdx){
             FMsgCnt = 0; // Clear count
             FErrorHitIdx = getRandRange(1, FConfig.uniformErrorVal);
@@ -302,7 +327,7 @@ void MasterMessageHandler::ApplyErrorModeOnData(unsigned char* buffer, int len)
         FMsgCnt++;
         if (FMsgCnt == FErrorHitIdx){
             buffer[FErrorHitIdx % len] = 0; // Set error data
-            LogMsg("Generate a error in message position " + IntToStr(FErrorHitIdx % len));
+            LogMsg("Generate a random error in message position " + IntToStr(FErrorHitIdx % len));
         }else if(FMsgCnt >= FConfig.uniformErrorVal){
             FMsgCnt = 0;
             // Gernerate a new rand(Uniform distribution) index using
@@ -317,8 +342,9 @@ void MasterMessageHandler::ApplyErrorModeOnData(unsigned char* buffer, int len)
         // In possion mode, the error distribution will generate every sending
         // the rand range will generate a data between 1 - 100,
         // and as possion distribution
-        if (FErrorHitIdx > FConfig.possionErrorVal){
+        if (FErrorHitIdx < FConfig.possionErrorVal){
             buffer[FErrorHitIdx % len] = 0; // Set error data
+            LogMsg("Generate a possion error in message position " + IntToStr(FErrorHitIdx % len));
         }
         break;
     default:

@@ -3,6 +3,7 @@
 
 #pragma hdrstop
 
+#include <stdio.h>
 #include "UServerClientWorkThread.h"
 #include "UMasterWorkThread.h"
 //---------------------------------------------------------------------------
@@ -54,7 +55,9 @@ void ServerClientWorkThread::LogMsg(AnsiString msg)
 //---------------------------------------------------------------------------
 __fastcall ServerClientWorkThread::~ServerClientWorkThread(void)
 {
-    LogMsg("ServerClientWorkThread exit. [" + IntToStr(GetCurrentThreadId()) + "]");
+    char buff[50];
+    snprintf(buff, 50, "ServerClientWorkThread %d will be exit.",
+        ::GetCurrentThreadId());
 }
 //---------------------------------------------------------------------------
 void ServerClientWorkThread::UpdateTagList(Msg* msg)

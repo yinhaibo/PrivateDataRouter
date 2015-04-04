@@ -87,18 +87,9 @@ typedef struct RawMsg
     unsigned short len;
     unsigned char stream[MAX_MESSAGE_LEN];
 public:
-    RawMsg(){
-        this->len = 0;
-        memset(stream, 0, MAX_MESSAGE_LEN);
-    }
-    RawMsg(const RawMsg& value){
-        this->len = value.len;
-        memcpy(this->stream, value.stream, MAX_MESSAGE_LEN);
-    }
-    RawMsg(RawMsg* value){
-        this->len = value->len;
-        memcpy(this->stream, value->stream, MAX_MESSAGE_LEN);
-    }
+    RawMsg();
+    RawMsg(const RawMsg& value);
+    RawMsg(RawMsg* value);
 }RawMsg;
 
 typedef enum MsgType
@@ -122,6 +113,13 @@ public:
         memcpy(this->taglist, msg.taglist, MAX_ALIAS_CNT * (ALIAS_LEN+1));
     }
 
+    void Exchange(Msg* pmsg){
+        char exchangebuf[ALIAS_LEN+1];
+        strncpy(exchangebuf, pmsg->from, ALIAS_LEN);
+        strncpy(pmsg->from, pmsg->to, ALIAS_LEN);
+        strncpy(pmsg->to, exchangebuf, ALIAS_LEN);
+    }
+
     RawMsg rawmsg;
     MsgType msgtype;
 
@@ -129,6 +127,7 @@ public:
     char from[ALIAS_LEN+1];
     char to[ALIAS_LEN+1];
     bool validedOK;
+    LONG msgid;
 
     // For tag list
     char taglist[MAX_ALIAS_CNT][ALIAS_LEN+1];
