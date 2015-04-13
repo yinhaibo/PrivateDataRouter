@@ -534,7 +534,7 @@ void __fastcall TFMain::btnOpenClick(TObject *Sender)
         rbMasterServerMode->Enabled = false;
         rbMasterClientMode->Enabled = false;
 
-        tmrReconn->Enabled = true;
+        tmrOutputPri->Enabled = true;
     }else{
         for (int i = 0; i < 3; i++){
             masterThread[i]->StopWorking();
@@ -550,7 +550,7 @@ void __fastcall TFMain::btnOpenClick(TObject *Sender)
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
 
-        tmrReconn->Enabled = false;
+        tmrOutputPri->Enabled = false;
     }
 }
 //---------------------------------------------------------------------------
@@ -577,7 +577,7 @@ void __fastcall TFMain::btnConnectClick(TObject *Sender)
         rbMasterServerMode->Enabled = false;
         rbMasterClientMode->Enabled = false;
 
-        tmrReconn->Enabled = true;
+        tmrOutputPri->Enabled = true;
     }else{
         for (int i = 0; i < 3; i++){
             masterThread[i]->StopWorking();
@@ -592,7 +592,7 @@ void __fastcall TFMain::btnConnectClick(TObject *Sender)
         rbMasterServerMode->Enabled = true;
         rbMasterClientMode->Enabled = true;
 
-        tmrReconn->Enabled = false;
+        tmrOutputPri->Enabled = false;
     }
 }
 //---------------------------------------------------------------------------
@@ -941,7 +941,7 @@ void TFMain::StopAllThread()
 void TFMain::TerminateAllThread()
 {
     try{
-        tmrReconn->Enabled = false;
+        tmrOutputPri->Enabled = false;
         csWorkVar->Enter();
         for (map<int, WorkItem>::iterator it = mWorkItems.begin();
             it != mWorkItems.end();
@@ -1236,14 +1236,17 @@ int TFMain::GetMaxPriChannel()
     return maxCh;
 }
 
-void __fastcall TFMain::tmrReconnTimer(TObject *Sender)
+void __fastcall TFMain::tmrOutputPriTimer(TObject *Sender)
 {
     //Get master channel priority
     iChPri[0] = masterThread[0]->GetChannelPriority();
     iChPri[1] = masterThread[1]->GetChannelPriority();
     iChPri[2] = masterThread[2]->GetChannelPriority();
-    logger.Log("Priority:" + IntToStr(iChPri[0]) + ", "
-         + IntToStr(iChPri[1]) + ", " + IntToStr(iChPri[2]) + ", ");
+    #ifdef _DEBUG
+    char buf[100];
+    snprintf(buf, 100, "Priority:%d, %d, %d", iChPri[0], iChPri[1], iChPri[2]);
+    logger.Log(buf);
+    #endif
     UpdateChannelPriUI();
 }
 //---------------------------------------------------------------------------

@@ -149,7 +149,9 @@ bool __fastcall WorkThread::onSendMessage(RawMsg& msg, int error)
     }else{
         LogMsg("Write( ):" + StreamToText(sendRawBuff, msg.len));
     }*/
+    #ifdef _DEBUG
     LogMsg("Write:" + StreamToText(sendRawBuff, msg.len));
+    #endif
     int sendLen = sendData(sendRawBuff, msg.len);
     return (sendLen == wpos);
 }
@@ -233,7 +235,9 @@ RawMsg* __fastcall WorkThread::onReceiveMessage(int error)
             LogMsg("Recv( ):" + StreamToText(recvRawBuff, mRecvLen));
         }*/
 
+        #ifdef _DEBUG
         LogMsg("Recv:" + StreamToText(recvRawBuff, mRecvLen));
+        #endif
         //Success receive data information and check the message
         rvCRC16 = crc16_cal(recvRawBuff, mRecvLen - MESSAGE_CRC_LEN);
         if (rvCRC16 == usDataCRC16){
@@ -261,7 +265,9 @@ RawMsg* __fastcall WorkThread::onReceiveMessage(int error)
 //---------------------------------------------------------------------------
 void WorkThread::processMessage()
 {
+    #ifdef _DEBUG
     char buff[40];
+    #endif
     /////////////////////////////
     // Receive message from device
     RawMsg* prawmsg = onReceiveMessage(getRandRange(1,100));
@@ -275,12 +281,16 @@ void WorkThread::processMessage()
                 FPrevMsgSeq = FCurrentMsgSeq;
                 FPrevMsgCRC = FCurrentMsgCRC;
                 if (FPrevMsg != NULL){
+                    #ifdef _DEBUG
                     snprintf(buff, 40, "%s--> delete copy Msg:%08ul",
                         FName.c_str(), FPrevMsg->msgid);
                     logger.Log(buff);
+                    #endif
                     delete FPrevMsg;
                 }
+                #ifdef _DEBUG
                 LogMsg(*prawmsg, "Receive a new local message, buffer and push to master");
+                #endif
                 if (FController != NULL){
                     // push a message to master
                     Msg* pmsg = new Msg(
@@ -289,20 +299,25 @@ void WorkThread::processMessage()
                             prawmsg->stream, prawmsg->len);
 
                     sendLocalMessage(pmsg);
-                    
+                    #ifdef _DEBUG
                     snprintf(buff, 40, "%s--> new Msg:%08ul", FName.c_str(), pmsg->msgid);
                     logger.Log(buff);
+                    #endif
                     FPrevMsg = new Msg(*pmsg);
+                    #ifdef _DEBUG
                     snprintf(buff, 40, "%s--> new bak Msg:%08ul", FName.c_str(),  FPrevMsg->msgid);
                     logger.Log(buff);
                     LogMsg("dispatch message to master");
+                    #endif
                     FDispatchChannel = FController->dispatchMsg(FChannel, pmsg);
                     FMsgSendTick = ::GetTickCount();
                 }
             }else{
                 // The device send a retransmillion(see Local Message Flag)
                 // or response message, the device proxy send to master
+                #ifdef _DEBUG
                 LogMsg(*prawmsg, "Receive a new message, push to master");
+                #endif
                 //duplicate message, push to master
                 if (FController != NULL){
                     Msg* pmsg = new Msg(
@@ -310,12 +325,16 @@ void WorkThread::processMessage()
                         mpDevCfg->dest.c_str(),
                         prawmsg->stream, prawmsg->len);
 
+                    #ifdef _DEBUG
                     snprintf(buff, 40, "%s-->> new Msg:%08ul", FName.c_str(), pmsg->msgid);
                     logger.Log(buff);
+                    #endif
                     if (FLocalMessage){
                         sendLocalMessage(pmsg);
-                        
+
+                        #ifdef ENABLE_PRIORITY
                         FController->decChannelPriority(FDispatchChannel);
+                        #endif
                         FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
                         // Only reset message send tick in retransmission local message
                         FMsgSendTick = ::GetTickCount();
@@ -344,7 +363,9 @@ void WorkThread::processMessage()
         if (pmsg != NULL){
             txMsgCnt ++;
             //LogMsg("Tx, Queue:" + IntToStr(mRawMsgQueue->Count()));
+            #ifdef _DEBUG
             LogMsg(*pmsg, "push to simulator");
+            #endif
             onSendMessage(*pmsg, getRandRange(1,100));
             delete pmsg;
         }
@@ -353,11 +374,17 @@ void WorkThread::processMessage()
     // Resend message in resend interval milliseconds
     if (FPrevMsg != NULL &&
         ::GetTickCount() - FMsgSendTick > FReSendInterval){
+        #ifdef _DEBUG
         LogMsg(FPrevMsg->rawmsg, "retransmission message to master");
+        #endif
         Msg* pmsg = new Msg(*FPrevMsg);
         sendLocalMessage(pmsg);
-        FController->decChannelPriority(FDispatchChannel);
-        FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
+        if (FController != NULL){
+            #ifdef ENABLE_PRIORITY
+            FController->decChannelPriority(FDispatchChannel);
+            #endif
+            FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
+        }
         FMsgSendTick = ::GetTickCount();
     }
 }
@@ -480,33 +507,43 @@ void WorkThread::Push(Msg* pmsg)
                     successTransMessage(FPrevMsg);
 
                     if (FDispatchChannel != NULL){
+                        #ifdef ENABLE_PRIORITY
                         FController->incChannelPriority(FDispatchChannel);
+                        #endif
                         FDispatchChannel = NULL;
                     }
+                    #ifdef _DEBUG
                     snprintf(buff, 40, "success sent, delete Msg:%08ul", FPrevMsg->msgid);
                     logger.Log(buff);
+                    #endif
 
                     // the message was sent success
                     delete FPrevMsg;
                     FPrevMsg = NULL;
                 }
             }
+            #ifdef _DEBUG
             snprintf(buff, 40, "delete Msg:%08ul", pmsg->msgid);
             logger.Log(buff);
+            #endif
             delete pmsg;
         }else{
             if (strcmp(pmsg->from, FPrevMsg->from) == 0){
                 // these is a error back message
                 // resend current message immediately
                 if (FController != NULL){
+                    #ifdef _DEBUG
                     LogMsg("resend current message because of error back");
+                    #endif
                     FController->dispatchMsg(FChannel, FPrevMsg);
                 }
             }else{
                 // these is a error message from source channel
                 // just back to the originator
                 if (FController != NULL){
+                    #ifdef _DEBUG
                     LogMsg("resend origne message because of error CRC");
+                    #endif
                     // exchange from and to field and recalculate CRC field
 
                     FController->dispatchMsg(FChannel, pmsg);
@@ -612,12 +649,16 @@ void WorkThread::sendLocalMessage(Msg* pmsg)
         mpDevCfg->resendTotal[0] = 1;
         mpDevCfg->sendSeq = FCurrentMsgSeq;
         mpDevCfg->sendCRC = FCurrentMsgCRC;
+        #ifdef _DEBUG
         LogMsg(pmsg->rawmsg, "Message sent:" + IntToStr(mpDevCfg->msgMsgSent));
+        #endif
     }else if (mpDevCfg->sendSeq == FCurrentMsgSeq &&
               mpDevCfg->sendCRC == FCurrentMsgCRC){
         mpDevCfg->dcResendCnt.val++;
+        #ifdef _DEBUG
         LogMsg(pmsg->rawmsg, " send Times:" +
             IntToStr(mpDevCfg->dcResendCnt.val));
+        #endif
     }else{
         // Have a new message, the prev message has sent
         // Calc min, max and avg
@@ -640,7 +681,9 @@ void WorkThread::sendLocalMessage(Msg* pmsg)
         mpDevCfg->sendSeq = FCurrentMsgSeq;  // Update send sequence
         mpDevCfg->sendCRC = FCurrentMsgCRC;
         mpDevCfg->dcResendCnt.val = 0;// Reset resend value
+        #ifdef _DEBUG
         LogMsg(pmsg->rawmsg, "Message sent:" + IntToStr(mpDevCfg->msgMsgSent));
+        #endif
     }
     mpDevCfg->sendTick = GetTickCount();
     mpDevCfg->msgTxCnt++;

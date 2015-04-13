@@ -25,18 +25,18 @@
       dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
       inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
       bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi"/>
-    <PATHCPP value=".;..\comm;..\comm;..\comm;..\comm"/>
+    <PATHCPP value=".;..\comm"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
     <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
     <RELEASELIBPATH value="$(BCB)\lib\release"/>
     <LINKER value="ilink32"/>
-    <USERDEFINES value="_DEBUG"/>
+    <USERDEFINES value="EUREKALOG;EUREKALOG_VER7"/>
     <SYSDEFINES value="NO_STRICT"/>
     <MAINSOURCE value="Master.cpp"/>
     <INCLUDEPATH value="&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\lib\VCL"/>
-    <LIBPATH value="&quot;C:\Program Files\Borland\CBuilder6\Projects&quot;;..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL"/>
+    <LIBPATH value="..\Simulator;..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL;&quot;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Debug\CBuilder6&quot;"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
@@ -44,19 +44,19 @@
     <IDLCFLAGS value="-I&quot;C:\Program Files\Borland\CBuilder6\Projects&quot; -I..\Simulator -I..\comm 
       -I&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot; 
       -ID:\Projects\IORouter\sourcecode\Master -I$(BCB)\include 
-      -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -D_DEBUG -boa"/>
-    <CFLAG1 value="-vGc -vGt -vGd -Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k 
-      -y -v -vi- -c -tW -tWM"/>
-    <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
+      -I$(BCB)\include\vcl -I$(BCB)\lib\VCL -src_suffix cpp -DEUREKALOG 
+      -DEUREKALOG_VER7 -boa"/>
+    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
-    <AFLAGS value="/mx /w2 /zi"/>
-    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn -v"/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -Gn"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
     <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
     <ALLRES value="$(RESFILES)"/>
-    <ALLLIB value="cg32.lib $(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
     <OTHERFILES value=""/>
   </LINKER>
   <FILELIST>
@@ -107,7 +107,7 @@ InternalName=
 LegalCopyright=
 LegalTrademarks=
 OriginalFilename=
-ProductName=
+ProductName=Master of IO Router
 ProductVersion=1.0.0.0
 Comments=
 
@@ -119,19 +119,26 @@ Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORo
 Item3=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
-Count=4
-Item0=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
-Item1=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
-Item2=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
-Item3=C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib
+Count=9
+Item0=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Debug\CBuilder6
+Item1=C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Debug\CBuilder6;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Release\CBuilder6;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Common;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item2=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Release\CBuilder6;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Common;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Debug\CBuilder6
+Item3=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Release\CBuilder6;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Common
+Item4=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL;C:\Program Files (x86)\Neos Eureka S.r.l\EurekaLog 7\Lib\Win32\Release\CBuilder6
+Item5=C:\Program Files\Borland\CBuilder6\Projects;..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item6=..\Simulator;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item7=..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib;$(BCB)\lib\VCL
+Item8=C:\Program Files (x86)\Borland\CBuilder6\Lib\VCL;..\comm;C:\Program Files (x86)\Borland\CBuilder6\Projects;D:\Projects\IORouter\sourcecode\Master;$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1
 Item0=$(BCB)\source\vcl
 
 [HistoryLists\hlConditionals]
-Count=1
-Item0=_DEBUG
+Count=3
+Item0=EUREKALOG;EUREKALOG_VER7
+Item1=_DEBUG;EUREKALOG;EUREKALOG_VER7
+Item2=_DEBUG
 
 [Debugging]
 DebugSourceDirs=$(BCB)\source\vcl
@@ -151,7 +158,7 @@ RemoteDebug=0
 [Compiler]
 ShowInfoMsgs=0
 LinkDebugVcl=0
-LinkCGLIB=1
+LinkCGLIB=0
 
 [CORBA]
 AddServerUnit=1

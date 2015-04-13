@@ -393,9 +393,11 @@ void __fastcall MasterWorkThread::onSocketConnect(System::TObject* Sender,
         FMsgHandler->getChannel()->Open();
         // Add tag list msg to queue on connection has build
         Msg* pmsg = new Msg();
+        #ifdef _DEBUG
         char buff[40];
         snprintf(buff, 40, "-->new Msg:%08ul", pmsg->msgid);
         logger.Log(buff);
+        #endif
         BuildTagListMsg(pmsg);
 
         bool succflag = FController->dispatchMsg(FMsgHandler->getChannel(), pmsg);
@@ -557,6 +559,7 @@ void __fastcall MasterWorkThread::UpdateConnectStatus()
 //---------------------------------------------------------------------------
 int MasterWorkThread::GetChannelPriority()
 {
+#ifdef ENABLE_PRIORITY
     if (FServerMode){
         if (mapClientThread.size() == 0) return 0;
         int totalPri = 0;
@@ -570,6 +573,9 @@ int MasterWorkThread::GetChannelPriority()
     }else{
         return FMsgHandler->getChannel()->getPriority();
     }
+#else
+    return FPriority;
+#endif
 }
 
 void MasterWorkThread::UdateChannelErrorMode(const master_config_t* config)

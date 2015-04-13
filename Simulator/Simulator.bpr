@@ -25,14 +25,14 @@
       dsnapcrba.bpi dsnapcon.bpi bcbsmp.bpi vclie.bpi xmlrtl.bpi inet.bpi 
       inetdbbde.bpi inetdbxpress.bpi inetdb.bpi nmfast.bpi webdsnap.bpi 
       bcbie.bpi websnap.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi"/>
-    <PATHCPP value=".;..\comm;..\comm;..\comm;..\comm"/>
+    <PATHCPP value=".;..\comm"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
     <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
     <RELEASELIBPATH value="$(BCB)\lib\release"/>
     <LINKER value="ilink32"/>
-    <USERDEFINES value="_DEBUG"/>
+    <USERDEFINES value=""/>
     <SYSDEFINES value="NO_STRICT"/>
     <MAINSOURCE value="Simulator.cpp"/>
     <INCLUDEPATH value="..\comm;&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot;;..\Master_;..\Simulator;$(BCB)\include;$(BCB)\include\vcl;$(BCB)\Lib\VCL"/>
@@ -43,19 +43,18 @@
   <OPTIONS>
     <IDLCFLAGS value="-I..\comm -I&quot;C:\Program Files (x86)\Borland\CBuilder6\Projects&quot; 
       -I..\Master_ -I..\Simulator -I$(BCB)\include -I$(BCB)\include\vcl 
-      -I$(BCB)\Lib\VCL -src_suffix cpp -D_DEBUG -boa"/>
-    <CFLAG1 value="-vGc -vGt -vGd -Od -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -r- -a8 -b- -k 
-      -y -v -vi- -c -tW -tWM"/>
-    <PFLAGS value="-$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
+      -I$(BCB)\Lib\VCL -src_suffix cpp -boa"/>
+    <CFLAG1 value="-O2 -H=$(BCB)\lib\vcl60.csm -Hc -Vx -Ve -X- -a8 -b- -k- -vi -c -tW -tWM"/>
+    <PFLAGS value="-$Y- -$L- -$D- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
-    <AFLAGS value="/mx /w2 /zi"/>
-    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn -v"/>
+    <AFLAGS value="/mx /w2 /zn"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe -x -Gn"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
     <ALLOBJ value="c0w32.obj sysinit.obj $(OBJFILES)"/>
     <ALLRES value="$(RESFILES)"/>
-    <ALLLIB value="cg32.lib $(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
+    <ALLLIB value="$(LIBFILES) $(LIBRARIES) import32.lib cp32mt.lib"/>
     <OTHERFILES value=""/>
   </LINKER>
   <FILELIST>
@@ -85,7 +84,7 @@ AutoIncBuild=1
 MajorVer=1
 MinorVer=1
 Release=0
-Build=10
+Build=12
 Debug=0
 PreRelease=0
 Special=0
@@ -97,7 +96,7 @@ CodePage=1252
 [Version Info Keys]
 CompanyName=
 FileDescription=Data Entry Device Simulator
-FileVersion=1.1.0.10
+FileVersion=1.1.0.12
 InternalName=
 LegalCopyright=
 LegalTrademarks=
@@ -146,7 +145,7 @@ RemoteDebug=0
 [Compiler]
 ShowInfoMsgs=0
 LinkDebugVcl=0
-LinkCGLIB=1
+LinkCGLIB=0
 
 [CORBA]
 AddServerUnit=1

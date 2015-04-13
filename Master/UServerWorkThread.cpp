@@ -132,8 +132,8 @@ void __fastcall ServerWorkThread::onGetThread(TObject *Sender,
 void __fastcall ServerWorkThread::onSocketConnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
-    char buffer[100];
-    snprintf("Socket connected:%s, Remote port:%d", 100,
+    char buffer[200];
+    snprintf(buffer, 200, "Socket connected:%s, Remote port:%d",
         Socket->RemoteAddress.c_str(), Socket->RemotePort);
     logger.Log(buffer);
     isConnected = true;

@@ -29,7 +29,9 @@ ServerClientWorkThread::ServerClientWorkThread(
 //Work thread to do business logic
 void __fastcall ServerClientWorkThread::ClientExecute(void)
 {
+    #ifdef _DEBUG
     LogMsg("ServerClientWorkThread is running. [" + IntToStr(GetCurrentThreadId()) + "]");
+    #endif
     Event(seConnect);
     //Register channel
     FMsgHandler = new MasterMessageHandler(FMaster, this, FController);
@@ -45,7 +47,9 @@ void __fastcall ServerClientWorkThread::ClientExecute(void)
     }
     if (ClientSocket->Connected) ClientSocket->Close();
     delete FMsgHandler;
+    #ifdef _DEBUG
     LogMsg("ServerClientWorkThread is end. [" + IntToStr(GetCurrentThreadId()) + "]");
+    #endif
 }
 //---------------------------------------------------------------------------
 void ServerClientWorkThread::LogMsg(AnsiString msg)
@@ -68,11 +72,13 @@ void ServerClientWorkThread::UpdateTagList(Msg* msg)
     memcpy(taglist, msg->taglist, sizeof(taglist));
 }
 
+#ifdef ENABLE_PRIORITY
 int ServerClientWorkThread::GetChannelPriority()
 {
     if (FMsgHandler == NULL || FMsgHandler->getChannel() == NULL) return 0;
     return FMsgHandler->getChannel()->getPriority();
 }
+#endif
 
 void ServerClientWorkThread::UdateChannelErrorMode(const master_config_t* config)
 {

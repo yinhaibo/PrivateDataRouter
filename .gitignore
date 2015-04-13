@@ -8,6 +8,7 @@
 *.~*
 *.tds
 *.ddp
+*.cgl
 
 #Log file
 *.log
@@ -80,3 +81,4 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+*.cgl

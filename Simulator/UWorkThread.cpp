@@ -61,6 +61,7 @@ __fastcall WorkThread::WorkThread(device_config_t* pDevCfg)
 void __fastcall WorkThread::Start()
 {
     mIsRunning = true;
+    sendSeq = 0;//Reset the sequence of transmission
     try{
         onStart();
         this->Resume();
@@ -121,7 +122,8 @@ void __fastcall WorkThread::Execute()
             // actively on random time depends delay parameters
             if (FActiveMode
                 && ::GetTickCount() - lastRequestTick >= requestTick
-                && FPeerReady && isEnableWrite){
+                && FPeerReady && isEnableWrite
+                && sendSeq <= FMaxMessageSend){
                 // save current tick
                 lastRequestTick = ::GetTickCount();
                 // generate next step's delay tick

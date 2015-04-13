@@ -12,7 +12,7 @@
 ///////////////////////////////////////////////////
 // Msg
 ///////////////////////////////////////////////////
-static LONG volatile msgid = 0;
+static LONG volatile g_msgid = 0;
 Msg::Msg()
 {
     memset(&rawmsg, 0, sizeof(RawMsg));
@@ -23,7 +23,7 @@ Msg::Msg()
     msgtype = MSGTYPE_TAGLIST;
     validedOK = true;
 
-    InterlockedIncrement(&msgid);
+    InterlockedIncrement(&g_msgid);
     this->msgid = msgid;
 }
 
@@ -37,7 +37,7 @@ Msg::Msg(char* from, char* to, const unsigned char* msg,
     rawmsg.len = len;
     memcpy(rawmsg.stream, msg, len);
 
-    InterlockedIncrement(&msgid);
+    InterlockedIncrement(&g_msgid);
     this->msgid = msgid;
 }
 
@@ -48,7 +48,7 @@ Msg::Msg(char* from, char* to, const RawMsg* msg)
     strncpy(this->from, from, ALIAS_LEN);
     strncpy(this->to, to, ALIAS_LEN);
     memcpy(&rawmsg, msg, sizeof(RawMsg));
-    InterlockedIncrement(&msgid);
+    InterlockedIncrement(&g_msgid);
     this->msgid = msgid;
 }
 
@@ -60,7 +60,7 @@ Msg::Msg(bool valided) : validedOK(valided)
     memset(taglist, 0, sizeof(taglist));
 
     msgtype = MSGTYPE_DATA;
-    InterlockedIncrement(&msgid);
+    InterlockedIncrement(&g_msgid);
     this->msgid = msgid;
 }
 

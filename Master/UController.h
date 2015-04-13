@@ -21,10 +21,13 @@ private:
     int  priority;
 public:
     Channel();
+
     int getPriority();
     void setPriority(const int val);
+#ifdef ENABLE_PRIORITY
     void incPriority();
     void decPriority();
+#endif
     bool isOpen();
     void Open();
     void Close();
@@ -55,6 +58,8 @@ private:
 
     void LogMsg(const Channel* fromch, const Channel* toch,
         const Msg* msg, AnsiString text);
+
+    Channel* getDispatchMsgCh(char* dest, Channel* lastch = NULL);
 public:
     virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL);
     virtual Channel* dispatchMsg(Msg* pmsg);

@@ -75,9 +75,11 @@ void __fastcall MasterMessageHandler::onSendMessage(TCustomWinSocket* client,
             //logger.Log("Get a message.");
             // build message
             sendMessageLen = BuildNetMessage(pmsg, sendBuf, NETMESSAGE_MAX_LEN);
-            //char buff[40];
-            //snprintf(buff, 40, "-->delete Msg:%08ul", pmsg->msgid);
-            //logger.Log(buff);
+            #ifdef _DEBUG
+            char buff[40];
+            snprintf(buff, 40, "-->delete Msg:%08ul", pmsg->msgid);
+            logger.Log(buff);
+            #endif
             delete pmsg;
 
             //Generate error data
@@ -158,8 +160,12 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
         FOffset = 0;
         
         if (!IS_NET_MESSAGE_HEAD(receiveBuf)){
+            #ifdef _DEBUG
             LogMsg("Invalid messgae head.");
+            #endif
+            #ifdef ENABLE_PRIORITY
             FChannel->decPriority();
+            #endif
             //Continue to receive message head
             break;
         }
@@ -176,7 +182,9 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
 
         if (!IS_NET_MESSAGE_CMD(receiveBuf, receivePos)){
             LogMsg("Invalid messgae command.");
+            #ifdef ENABLE_PRIORITY
             FChannel->decPriority();
+            #endif
             //Continue to receive message head
             recvStatus = NET_MASTER_RECV_HEAD;
             break;
@@ -196,7 +204,9 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
         messageLen = NETMESSAGE_LEN(receiveBuf, receivePos);
         if (messageLen < NETMESSAGE_MIN_LEN
             || messageLen > NETMESSAGE_MAX_LEN){
+            #ifdef ENABLE_PRIORITY
             FChannel->decPriority();
+            #endif
             LogMsg("Invalid message len.[" + IntToStr(NETMESSAGE_MIN_LEN)
                 + "," + IntToStr(NETMESSAGE_MAX_LEN));
             recvStatus = NET_MASTER_RECV_HEAD;
@@ -216,11 +226,16 @@ Msg * __fastcall MasterMessageHandler::onReceiveMessage(TCustomWinSocket* client
 
         // get a message, neet to post to queue
         pmsg = ResloveNetMessage(receiveBuf, messageLen);
+        if (pmsg == NULL){
+            LogMsg("Net Message error.");
+        }
+        #ifdef ENABLE_PRIORITY
         if (pmsg != NULL && pmsg->validedOK){
             FChannel->incPriority();
         }else{
             FChannel->decPriority();
         }
+        #endif
         // logger
         //FMaster->LogRxMsg(pmsg);
 
@@ -247,14 +262,18 @@ void __fastcall MasterMessageHandler::ProcessMessage(TCustomWinSocket* client,
             Msg* pmsg = onReceiveMessage(client, stream);
 
             if (pmsg != NULL){
+                #ifdef _DEBUG
                 char buff[40];
                 snprintf(buff, 40, "Net--> New Msg:%08ul", pmsg->msgid);
                 logger.Log(buff);
+                #endif
                 if (pmsg->msgtype == MSGTYPE_TAGLIST){
                     FChannel->setAlias((const char**)pmsg->taglist);
+                    #ifdef _DEBUG
                     char buff[40];
                     snprintf(buff, 40, "delete Msg:%08ul", pmsg->msgid);
                     logger.Log(buff);
+                    #endif
                     delete pmsg;
                 }else{
                     // logger
@@ -327,14 +346,18 @@ void MasterMessageHandler::ApplyErrorModeOnData(unsigned char* buffer, int len)
         FMsgCnt++;
         if (FMsgCnt == FErrorHitIdx){
             buffer[FErrorHitIdx % len] = 0; // Set error data
+            #ifdef _DEBUG
             LogMsg("Generate a random error in message position " + IntToStr(FErrorHitIdx % len));
+            #endif
         }else if(FMsgCnt >= FConfig.uniformErrorVal){
             FMsgCnt = 0;
             // Gernerate a new rand(Uniform distribution) index using
             // current error val, as say 1000
             // The error will be insert, for say in 456 messages
             FErrorHitIdx = getRandRange(1, FConfig.uniformErrorVal);
+            #ifdef _DEBUG
             LogMsg("Create a error mode in " + IntToStr(FErrorHitIdx));
+            #endif
         }
         break;
     case ERROR_MODE_POSSION_IDX:
@@ -344,7 +367,9 @@ void MasterMessageHandler::ApplyErrorModeOnData(unsigned char* buffer, int len)
         // and as possion distribution
         if (FErrorHitIdx < FConfig.possionErrorVal){
             buffer[FErrorHitIdx % len] = 0; // Set error data
+            #ifdef _DEBUG
             LogMsg("Generate a possion error in message position " + IntToStr(FErrorHitIdx % len));
+            #endif
         }
         break;
     default:

@@ -19,8 +19,10 @@ Channel::Channel()
     memset(alias, 0, sizeof(alias));
     executer = NULL;
     opened = false;
+
     priority = 0;
 }
+
 int Channel::getPriority()
 {
     return priority;
@@ -126,22 +128,29 @@ bool Channel::hasAlias(const char* alias)
     }
     return false;
 }
+#ifdef ENABLE_PRORITY
 void Channel::incPriority()
 {
     priority++;
     if (priority == 0x80000000) priority = 0x0FFFFFFF;
+    #ifdef _DEBUG
     char buf[50];
     snprintf(buf, 50, "%s Inc priority %d", aliasString.c_str(), priority);
     logger.Log(buf);
+    #endif
 }
 void Channel::decPriority()
 {
     priority--;
     if (priority == 0x80000000) priority = 0x80000000;
+    #ifdef _DEBUG
     char buf[50];
     snprintf(buf, 50, "%s Dec priority %d", aliasString.c_str(), priority);
     logger.Log(buf);
+    #endif
 }
+#endif
+
 const AnsiString& Channel::getAliasString() const
 {
     return this->aliasString;
@@ -177,6 +186,7 @@ Channel* Controller::registerChannel(const AnsiString& aliasString, IMsgPush* ex
     channel->setExecuter(executer);
     channel->setPriority(priority);
 
+
     lstChannel.push_back(channel);
 
     return channel;
@@ -209,6 +219,44 @@ Channel* Controller::dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch)
     return rv;
 }
 
+Channel* Controller::getDispatchMsgCh(char* dest, Channel* lastch)
+{
+    Channel* selectCh = NULL;
+    Channel* currentCh;
+    int maxPriority = 0x80000000; //Min priority
+    list<Channel*>::iterator it;
+
+    for (it = lstChannel.begin();
+         it != lstChannel.end();
+         ++it){
+         currentCh = *it;
+         if (currentCh != NULL && currentCh->hasAlias(dest)){
+            if (lastch == NULL){
+                // default to using priority
+                if (currentCh->getPriority() > maxPriority){
+                    maxPriority = currentCh->getPriority();
+                    selectCh = currentCh;
+                }
+            }else{
+                // find the channel which have max priority less that current CH
+                if (lastch != currentCh &&
+                    currentCh->getPriority() <= lastch->getPriority()){
+                    if (currentCh->getPriority() > maxPriority){
+                        maxPriority = currentCh->getPriority();
+                        selectCh = currentCh;
+                    }
+                }
+            }
+        }
+    }
+    if (lastch != NULL && selectCh == NULL){
+        // last CH is lest channel
+        return getDispatchMsgCh(dest, NULL);
+    }
+
+    return selectCh;
+}
+
 Channel* Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch)
 {
     AnsiString dest = AnsiString(pmsg->to);
@@ -216,78 +264,57 @@ Channel* Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastc
     bool dispatchSucc = false;
     
     if (pmsg->msgtype == MSGTYPE_DATA){
-        Channel* currentCh;
-        int maxPriority = 0x80000000; //Min priority
-        list<Channel*>::iterator it;
-
-        bool selectNext = false;
-        Channel* firstCH = NULL;
-        for (it = lstChannel.begin();
-             it != lstChannel.end();
-             ++it){
-             currentCh = *it;
-             if (currentCh != NULL && currentCh->hasAlias(dest.c_str())){
-                if (firstCH == NULL){
-                    firstCH = currentCh;
-                }
-                if (selectNext){
-                    selectCh = currentCh;
-                    break;
-                }
-                if (lastch == NULL){
-                    // default to using priority
-                    if (currentCh->getPriority() > maxPriority){
-                        maxPriority = currentCh->getPriority();
-                        selectCh = currentCh;
-                    }
-                }else{
-                    // using index instead of priority
-                    if (lastch == currentCh){
-                        selectNext = true;
-                    }
-                }
-             }
-        }
-        if (selectNext && selectCh == NULL){
-            // Need to select the first channel
-            selectCh = firstCH;
-        }
+        selectCh = getDispatchMsgCh(dest.c_str(), lastch);
 
         if (selectCh != NULL){
             // allow send to channel which has highest priority
             // and the channel has opened
             if (selectCh->hasAlias(dest.c_str()) && selectCh->getExecuter()){
                 if (selectCh->isOpen()){
+                    #ifdef _DEBUG
                     LogMsg(channel, selectCh, pmsg, "push");
+                    #endif
                     selectCh->getExecuter()->Push(pmsg);
                     dispatchSucc = true;
                 }else{
+                    #ifdef _DEBUG
                     LogMsg(channel, selectCh, pmsg, "not open");
+                    #endif
                 }
             }else{
+                #ifdef _DEBUG
                 LogMsg(channel, selectCh, pmsg, "no dest or executer");
+                #endif
             }
         }else{
+            #ifdef _DEBUG
             LogMsg(channel, NULL, pmsg, "no channel");
+            #endif
         }
     }else if (pmsg->msgtype == MSGTYPE_TAGLIST){
         // Bind a new dest location set.
 //        channel->setAlias((const char**)pmsg->taglist);
         if (channel->isOpen()){
             channel->getExecuter()->Push(pmsg);
+            #ifdef _DEBUG
             LogMsg(channel, NULL, pmsg, "push taglist");
+            #endif
             dispatchSucc = true;
         }else{
+            #ifdef _DEBUG
             LogMsg(channel, NULL, pmsg, "not open");
+            #endif
         }
         selectCh = channel;
     }
 
     if (!dispatchSucc){
         // !!!Message discard...
+        #ifdef _DEBUG
         char buff[40];
         snprintf(buff, 40, "discard Msg:%08ul", pmsg->msgid);
         logger.Log(buff);
+        #endif
         delete pmsg;
     }
 
@@ -312,7 +339,7 @@ void Controller::LogMsg(const Channel* fromch, const Channel* toch,
 
     logger.Log(buffer);
 }
-
+#ifdef ENABLE_PRIORITY
 bool Controller::incChannelPriority(Channel* channel)
 {
     Channel* selectItem;
@@ -347,7 +374,9 @@ bool Controller::decChannelPriority(Channel* channel)
             ++it){
             selectItem = *it;
             if (channel == selectItem){
+                #ifdef ENABLE_PRIORITY
                 channel->decPriority();
+                #endif
                 return true;
             }
         }
@@ -356,4 +385,6 @@ bool Controller::decChannelPriority(Channel* channel)
     }
     return false;
 }
+#endif
+
 

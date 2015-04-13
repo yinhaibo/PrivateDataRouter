@@ -741,9 +741,9 @@ object FMain: TFMain
       end
     end
   end
-  object tmrReconn: TTimer
+  object tmrOutputPri: TTimer
     Enabled = False
-    OnTimer = tmrReconnTimer
+    OnTimer = tmrOutputPriTimer
     Left = 816
     Top = 336
   end

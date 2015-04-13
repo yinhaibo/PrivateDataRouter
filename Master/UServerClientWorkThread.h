@@ -30,7 +30,9 @@ public:
 
 
     void UpdateTagList(Msg* msg);
+#ifdef ENABLE_PRIORITY
     int GetChannelPriority();
+#endif
     void UdateChannelErrorMode(const master_config_t* config);
 
     //virtual void Push(Msg* pmsg);

@@ -81,7 +81,7 @@ __published:	// IDE-managed Components
     TMenuItem *About1;
     TMenuItem *TCPclientconfigure1;
     TMenuItem *Saveconfigure1;
-    TTimer *tmrReconn;
+    TTimer *tmrOutputPri;
     TButton *btnClear;
     TLabel *lblConnCntCH1;
     TEdit *txtRxBytesCH2;
@@ -143,7 +143,7 @@ __published:	// IDE-managed Components
     void __fastcall btnClearClick(TObject *Sender);
     void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
     void __fastcall chkAutoReconnClick(TObject *Sender);
-    void __fastcall tmrReconnTimer(TObject *Sender);
+    void __fastcall tmrOutputPriTimer(TObject *Sender);
     void __fastcall cboErrorCH1Change(TObject *Sender);
     void __fastcall cboErrorCH2Change(TObject *Sender);
     void __fastcall cboErrorCH3Change(TObject *Sender);
