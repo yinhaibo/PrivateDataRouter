@@ -191,6 +191,7 @@ void TFMain::ReloadConfigure()
     mnuActivePassive->Checked = chkActiveMode->Checked;
     chkAutoReconn->Checked = ini->ReadBool("head", "AutoReconnect", true);
     FMaxMessageSend = ini->ReadInteger("head", "MessageCount", 1000);
+    FResendEnable = ini->ReadInteger("head", "ResendEnable", false);
     txtMessageCount->Text = IntToStr(FMaxMessageSend);
 
     //Load device configure into lstDeviceConfig
@@ -427,7 +428,11 @@ bool TFMain::EditRow(int selRow)
                 thread->Stop();
                 delete thread;
             }
-            mWorkItems[selRow].thread = CreateWorkThread(selRow);
+            thread = CreateWorkThread(selRow);
+            if (thread != NULL){
+                thread->ResendEnable = FResendEnable;
+                mWorkItems[selRow].thread = thread;
+            }
         }
         return true;
     }else{

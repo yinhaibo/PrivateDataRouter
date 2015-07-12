@@ -73,8 +73,8 @@ int __fastcall ClientWorkThread::sendData(unsigned char* pbuffer, int len)
                     sendPos += sendLen;
                 }
             }
+            LogMsg("Write :" + IntToStr(sendLen) + ", socket:" + IntToStr((int)mClient->Socket));
             return len;
-            //LogMsg("Write :" + IntToStr(sendLen));
         }catch(...){
             LogMsg("Socket error in write:" + IntToStr(mClient->Socket->Handle));
             socketErrorProcess();
@@ -122,7 +122,7 @@ void ClientWorkThread::initParameters()
     }
     mClient->Host = ip;
     mClient->Port = port;
-    mClient->ClientType = ctNonBlocking;
+    mClient->ClientType = ctBlocking;
     mClient->OnConnect = onSocketConnect;
     mClient->OnDisconnect = onSocketDisconnect;
     mClient->OnRead = onSocketRead;
@@ -152,9 +152,9 @@ void __fastcall ClientWorkThread::onSocketDisconnect(System::TObject* Sender,
         reconnectTick = ::GetTickCount();
     }else{
         mIsRunning = false;
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(this, true);
-        }
+        //if (FOnCloseChannel != NULL){
+        //    FOnCloseChannel(this, true);
+        //}
     }
     FPeerReady = false;
 }
@@ -169,6 +169,10 @@ void __fastcall ClientWorkThread::onSocketRead(System::TObject* Sender,
 void __fastcall ClientWorkThread::onSocketWrite(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
+    LogMsg("On Write.");
+    char buff[6] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x00};
+    Socket->SendBuf(buff, 5);
+    Socket->SendText("hello");
     if (mClient != NULL){
         isEnableWrite = true;
     }
@@ -191,9 +195,9 @@ void __fastcall ClientWorkThread::socketErrorProcess()
         if (userOpen && autoReconnect){
             reconnectTick = ::GetTickCount();
         }else{
-            if (FOnCloseChannel != NULL){
-                FOnCloseChannel(this, true);
-            }
+            //if (FOnCloseChannel != NULL){
+            //    FOnCloseChannel(this, true);
+            //}
             mIsRunning = false;
         }
         isEnableWrite = false;

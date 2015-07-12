@@ -32,7 +32,7 @@ extern LogFileEx logger;
 //---------------------------------------------------------------------------
 
 __fastcall WorkThread::WorkThread(device_config_t* pDevCfg)
-    : TThread(true), mpDevCfg(pDevCfg)
+    : TThread(false), mpDevCfg(pDevCfg)
 {
     errorMsgPerMsg = -1;
     respMsgCnt = 0;
@@ -45,9 +45,9 @@ __fastcall WorkThread::WorkThread(device_config_t* pDevCfg)
     memset((void*)&mMessage, 0, sizeof(mMessage));
     memset((void*)&mEOFMessage, 0, sizeof(mEOFMessage));
     CREATE_MESSAGE(mMessage, pDevCfg->head, pDevCfg->tag,
-        1, pDevCfg->message);
+        0, pDevCfg->message);
     CREATE_MESSAGE(mEOFMessage, pDevCfg->head, pDevCfg->tag,
-        1, pDevCfg->eofMessage); 
+        0, pDevCfg->eofMessage); 
     //memcpy(&mRespMsg, prespMsg, sizeof(message_t));
     //memcpy(&mRespErrMsg, &mRespMsg, sizeof(message_t));
     //mRespErrMsg.len = 0;
@@ -56,37 +56,28 @@ __fastcall WorkThread::WorkThread(device_config_t* pDevCfg)
     memset(&mSendMsgBuf, 0, sizeof(mSendMsgBuf));
     
     mMsgStatus = RECV_MSG_STATUS_HEAD;
+    FStatus = WORK_STATUS_WAIT;
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Start()
 {
     mIsRunning = true;
-    sendSeq = 0;//Reset the sequence of transmission
-    try{
-        onStart();
-        this->Resume();
+    if (FStatus == WORK_STATUS_WAIT){
+        FStatus = WORK_STATUS_CONNECT;
         if (FOnOpenChannel != NULL){
             FOnOpenChannel(this, true);
         }
-    }catch(...){
-        if (FOnOpenChannel != NULL){
-            FOnOpenChannel(this, false);
-        }
+    }else{
+        LogMsg("Open in Non-Wait status.");
     }
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Stop()
 {
     mIsRunning = false;
-    try{
-        onStop();
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(this, true);
-        }
-    }catch(...){
-        if (FOnCloseChannel != NULL){
-            FOnCloseChannel(this, false);
-        }
+    FStatus = WORK_STATUS_CLOSE_WORKING;
+    if (FOnCloseChannel != NULL){
+        FOnCloseChannel(this, true);
     }
 }
 //---------------------------------------------------------------------------
@@ -97,14 +88,12 @@ int __fastcall WorkThread::getRandRange(int from , int to)
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Execute()
 {
-
-    unsigned int txMsgCnt = 0;
-    unsigned int rxMsgCnt = 0;
-    unsigned int errMsgCnt = 0;
-    DWORD lastReportTick = 0;
-    DWORD requestTick = 0;
-    DWORD lastRequestTick = 0;
-    message_t receiveMsg;
+    txMsgCnt = 0;
+    rxMsgCnt = 0;
+    errMsgCnt = 0;
+    lastReportTick = 0;
+    requestTick = 0;
+    lastRequestTick = 0;
 
     sendSeq = 1;
     mpDevCfg->sendSeq = 0; // Set a invalid sequence
@@ -112,122 +101,189 @@ void __fastcall WorkThread::Execute()
     msgStatus = MESSAGE_SEND_MESSAGE; // At first, Send a message with inforation
     //---- Place thread code here ----
     while(!this->Terminated){
-        while (!this->Terminated && mIsRunning){
-            if (reconnectTick > 0){
-                if ((GetTickCount() - reconnectTick) > 3000){
-                    onReStart();
-                }
-            }
-            // In active mode, the thread will send request the message
-            // actively on random time depends delay parameters
-            if (FActiveMode
-                && ::GetTickCount() - lastRequestTick >= requestTick
-                && FPeerReady && isEnableWrite
-                && sendSeq <= FMaxMessageSend){
-                // save current tick
-                lastRequestTick = ::GetTickCount();
-                // generate next step's delay tick
-                requestTick = getRandRange(mpDevCfg->delayFrom, mpDevCfg->delayTo);
-
-                // Send message, Message or EOF Message
-                if (msgStatus == MESSAGE_SEND_MESSAGE)
-                {
-                    LogMsg("Tx Message, Seq:" + IntToStr(sendSeq));
-                    if (mMessage.seq != sendSeq){
-                        // Only renew the message while send sequence has changed.
-                        fillMessageStruct(mMessage);
-                    }
-                    if (onSendMessage(mMessage, 0)){
-                        txMsgCnt++;
-                    }
-                }else{
-                    LogMsg("Tx EOF Message, Seq:" + IntToStr(sendSeq));
-                    if (mEOFMessage.seq != sendSeq){
-                        // Only renew the message while send sequence has changed.
-                        fillMessageStruct(mEOFMessage);
-                    }
-                    if (onSendMessage(mEOFMessage, 0)){
-                        mpDevCfg->msgTxCnt++;
-                        txMsgCnt++;
-                    }
-                }
-            }
-            // receive message
-            message_t* pmsg = onReceiveMessage();
-            if (pmsg != NULL){
-                memcpy(&receiveMsg, pmsg, sizeof(message_t));
-                rxMsgCnt++;
-                if (bMessageOK){
-                    LogMsg(pmsg, "Receive message OK");
-                    // There is a response message while their has a same tag field.
-                    if (pmsg->tag == mpDevCfg->tag){
-                        if (msgStatus == MESSAGE_SEND_MESSAGE)
-                        {
-                            ///////////MESSAGE////////////
-                            if (receiveMsg.seq == mMessage.seq &&
-                                receiveMsg.clen == mMessage.clen &&
-                                receiveMsg.crc16 == mMessage.crc16)
-                            {
-                                LogMsg("Rx Message, Seq:" + IntToStr(sendSeq));
-                                // Message has sent successfullly
-                                // and Send EOF message immediatelly
-                                msgStatus = MESSAGE_SEND_EOFMESSAGE;
-                                fillMessageStruct(mEOFMessage);
-                                if (onSendMessage(mEOFMessage, 0)){
-                                    txMsgCnt++;
-                                }
-                            }else{
-                                // Error seq or len or content.
-                                // Message will resent after delay works.
-                                errMsgCnt++;
-                                LogMsg("Rx Error Message, Seq:" + IntToStr(sendSeq));
-                            }
-                        }else{
-                            ///////////EOF MESSAGE////////////
-                            if (receiveMsg.seq == mEOFMessage.seq &&
-                                receiveMsg.clen == mEOFMessage.clen &&
-                                receiveMsg.crc16 == mEOFMessage.crc16)
-                            {
-                                //Send success
-                                LogMsg("Rx EOF Message, Seq:" + IntToStr(sendSeq));
-                                sendSeq++; //Increase message sequence
-                                if (sendSeq == 0){
-                                    sendSeq++;
-                                }
-                                msgStatus = MESSAGE_SEND_MESSAGE;
-                            }else{
-                                // Error seq or len or content.
-                                // Message will resent after delay works.
-                                errMsgCnt++;
-                                LogMsg("Rx Error EOF Message, Seq:" + IntToStr(mEOFMessage.seq));
-                            }
-                        }
-                    }else{
-                        // Resonse message
-                        // Just copy that and back it.
-                        if (FPeerReady){
-                            LogMsg("Response message, Seq:" + IntToStr(pmsg->seq));
-                            if (onSendMessage(receiveMsg, 0)){
-                                txMsgCnt++;
-                            }
-                        }
-                    }
-                }else{
-                    LogMsg("Rx Error, Seq:" + IntToStr(sendSeq) + "->" + StreamToText(receiveMsg.content, sizeof(receiveMsg.len)));
-                    errMsgCnt++;
-                }
-            }
-
-            updateUIEvent(txMsgCnt, rxMsgCnt, errMsgCnt, lastReportTick);
+        switch(FStatus){
+        case WORK_STATUS_WAIT:           // Wait to connect
             Sleep(10);
+            break;
+        case WORK_STATUS_DELAYCONNECT:   //
+            Sleep(3000);
+            FStatus = WORK_STATUS_CONNECT;
+            break;
+        case WORK_STATUS_CONNECT:        // Wait to connected
+            sendSeq = 1;//Reset the sequence of transmission
+            try{
+                onStart();
+                FStatus = WORK_STATUS_WORKING;
+            }catch(...){
+                if (FStatus == WORK_STATUS_CONNECT){
+                    FStatus = WORK_STATUS_DELAYCONNECT;
+                }
+            }
+            break;
+        case WORK_STATUS_LISTEN:         // Wait client to connect in server mode only.
+            // pass through, just client connections
+        case WORK_STATUS_WORKING:        // Wait receive and send message, go to connect while error occur.
+            processMessage();
+            Sleep(10);
+            break;
+        case WORK_STATUS_CLOSE_WORKING:  // Wait process all buffer data
+            //passthrough
+        case WORK_STATUS_STOP:            // Stoping and goto wait
+            try{
+                onStop();
+                FStatus = WORK_STATUS_WAIT;
+            }catch(...){
+            }
+            FStatus = WORK_STATUS_WAIT;
+            Sleep(10);
+            break;
         }
 
-        updateUIEvent(txMsgCnt, rxMsgCnt, errMsgCnt, lastReportTick);
-        if (!mIsRunning){
-            Sleep(10);
-        }            
+        updateUIEvent(txMsgCnt, rxMsgCnt, errMsgCnt, lastReportTick);    
     }
     LogMsg("Work thread exit...");
+}
+
+void __fastcall WorkThread::processMessage()
+{
+    // In active mode, the thread will send request the message
+    // actively on random time depends delay parameters
+    if (FActiveMode
+        && ::GetTickCount() - lastRequestTick >= requestTick
+        && FPeerReady //&& isEnableWrite
+        && sendSeq <= FMaxMessageSend){
+        // save current tick
+        lastRequestTick = ::GetTickCount();
+        // generate next step's delay tick
+        requestTick = getRandRange(mpDevCfg->delayFrom, mpDevCfg->delayTo);
+
+        if (!FResendEnable){
+            if (msgStatus == MESSAGE_SEND_MESSAGE && mMessage.seq == sendSeq){
+                msgStatus = MESSAGE_SEND_EOFMESSAGE;
+            }else if(msgStatus == MESSAGE_SEND_EOFMESSAGE && mEOFMessage.seq == sendSeq){
+                msgStatus = MESSAGE_SEND_MESSAGE;
+                sendSeq++;
+                if (sendSeq == 0){
+                    sendSeq++;
+                }
+            }
+        }
+
+        // Send message, Message or EOF Message
+        if (msgStatus == MESSAGE_SEND_MESSAGE)
+        {
+            LogMsg("Tx Message, Seq:" + IntToStr(sendSeq));
+            if (mMessage.seq != sendSeq){
+                // Only renew the message while send sequence has changed.
+                fillMessageStruct(mMessage);
+            }
+            if (onSendMessage(mMessage, 0)){
+                txMsgCnt++;
+            }
+        }else{
+            LogMsg("Tx EOF Message, Seq:" + IntToStr(sendSeq));
+            if (mEOFMessage.seq != sendSeq){
+                // Only renew the message while send sequence has changed.
+                fillMessageStruct(mEOFMessage);
+            }
+            if (onSendMessage(mEOFMessage, 0)){
+                mpDevCfg->msgTxCnt++;
+                txMsgCnt++;
+            }
+        }
+    }//~ if (FActiveMode......
+    // receive message
+    message_t* pmsg = onReceiveMessage();
+    if (pmsg != NULL){
+        memcpy(&receiveMsg, pmsg, sizeof(message_t));
+        rxMsgCnt++;
+        if (bMessageOK){
+            LogMsg(pmsg, "Receive message OK");
+            // There is a response message while their has a same tag field.
+            if (pmsg->tag == mpDevCfg->tag){
+                if (msgStatus == MESSAGE_SEND_MESSAGE)
+                {
+                    ///////////MESSAGE////////////
+                    if (receiveMsg.seq == mMessage.seq &&
+                        receiveMsg.clen == mMessage.clen &&
+                        receiveMsg.crc16 == mMessage.crc16)
+                    {
+                        LogMsg("Rx Message, Seq:" + IntToStr(sendSeq));
+                        // Message has sent successfullly
+                        // and Send EOF message immediatelly
+                        msgStatus = MESSAGE_SEND_EOFMESSAGE;
+                        fillMessageStruct(mEOFMessage);
+                        if (onSendMessage(mEOFMessage, 0)){
+                            txMsgCnt++;
+                        }
+                    }else{
+                        // Error seq or len or content.
+                        // Message will resent after delay works.
+                        errMsgCnt++;
+                        LogMsg("Rx Error Message, Seq:" + IntToStr(sendSeq));
+                        if (!FResendEnable){
+                            // Donot resend current message
+                            msgStatus = MESSAGE_SEND_EOFMESSAGE;
+                        }
+                    }//~Message
+
+                }else{
+                    ///////////EOF MESSAGE////////////
+                    if (receiveMsg.seq == mEOFMessage.seq &&
+                        receiveMsg.clen == mEOFMessage.clen &&
+                        receiveMsg.crc16 == mEOFMessage.crc16)
+                    {
+                        //Send success
+                        LogMsg("Rx EOF Message, Seq:" + IntToStr(sendSeq));
+                        sendSeq++; //Increase message sequence
+                        if (sendSeq == 0){
+                            sendSeq++;
+                        }
+                        msgStatus = MESSAGE_SEND_MESSAGE;
+                    }else{
+                        // Error seq or len or content.
+                        // Message will resent after delay works.
+                        errMsgCnt++;
+                        LogMsg("Rx Error EOF Message, Seq:" + IntToStr(mEOFMessage.seq));
+                        if (!FResendEnable){
+                            // Donot resend current message
+                            sendSeq++; //Increase message sequence
+                            if (sendSeq == 0){
+                                sendSeq++;
+                            }
+                            msgStatus = MESSAGE_SEND_MESSAGE;
+                        }
+                    }//~EOF Message
+                }//~msgStatus...
+            }else{
+                // Resonse message
+                // Just copy that and back it.
+                if (FPeerReady){
+                    LogMsg("Response message, Seq:" + IntToStr(pmsg->seq));
+                    if (onSendMessage(receiveMsg, 0)){
+                        txMsgCnt++;
+                    }
+                }
+            }//Message tag
+        }else{
+            LogMsg("Rx Error, Seq:" + IntToStr(sendSeq) + "->" + StreamToText(receiveMsg.content, sizeof(receiveMsg.len)));
+            errMsgCnt++;
+        }//~if(bMessageOK...
+    }/*else if(FPeerReady && !FResendEnable){
+        //No need to resend, while there is no response, we just go on
+        if (msgStatus == MESSAGE_SEND_MESSAGE)
+        {
+            msgStatus = MESSAGE_SEND_EOFMESSAGE;
+        }else{
+            sendSeq++; //Increase message sequence
+            if (sendSeq == 0){
+                sendSeq++;
+            }
+            msgStatus = MESSAGE_SEND_MESSAGE;
+        }
+    } */
+
+    updateUIEvent(txMsgCnt, rxMsgCnt, errMsgCnt, lastReportTick);
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::updateUIEvent(
@@ -501,3 +557,14 @@ int __fastcall WorkThreadMessage::GetErrMsgCnt()
 }
 
 
+
+void __fastcall WorkThread::SetResendEnable(bool value)
+{
+    if(FResendEnable != value) {
+        FResendEnable = value;
+    }
+}
+bool __fastcall WorkThread::GetResendEnable()
+{
+    return FResendEnable;
+}

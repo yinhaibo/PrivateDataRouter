@@ -61,6 +61,16 @@ typedef enum _recv_msg_status_t
     RECV_MSG_STATUS_DATA,    // Receive message data after len
 }recv_msg_status_t;
 
+typedef enum _work_status_t{
+    WORK_STATUS_WAIT,           // Wait to connect
+    WORK_STATUS_DELAYCONNECT,   //
+    WORK_STATUS_CONNECT,        // Wait to connected
+    WORK_STATUS_LISTEN,         // Wait client to connect in server mode only.
+    WORK_STATUS_WORKING,        // Wait receive and send message, go to connect while error occur.
+    WORK_STATUS_CLOSE_WORKING,  // Wait process all buffer data
+    WORK_STATUS_STOP            // Stoping and goto wait
+}work_status_t;
+
 // Work thread define
 class WorkThread : public TThread
 {            
@@ -78,6 +88,21 @@ private:
     int FTag;
     bool FActiveMode;
 
+    // Message processing variants
+    unsigned int txMsgCnt;
+    unsigned int rxMsgCnt;
+    unsigned int errMsgCnt;
+    DWORD lastReportTick;
+    DWORD requestTick;
+    DWORD lastRequestTick;
+    message_t receiveMsg;
+
+    void __fastcall processMessage();
+
+    work_status_t FStatus; // Current work status
+              // Wait, Connect, working, stop
+
+
     // Generate error message while send specified message count
     // errorMsgPerMsg save the count,
     // -1 is need to re-generage a new value in random way
@@ -91,7 +116,10 @@ private:
 
     unsigned int sendSeq;
 
-    message_send_status_t msgStatus; //Message status
+    message_send_status_t msgStatus;
+    bool FResendEnable;
+    void __fastcall SetResendEnable(bool value);
+    bool __fastcall GetResendEnable(); //Message status
 protected:
     // Configure
     //WorkParameter mParam;
@@ -175,6 +203,7 @@ public:
     __property AnsiString Name  = { read=FName, write=FName };
     __property long Seed  = { read=FSeed, write=FSeed };
     __property unsigned int MaxMessageSend  = { read=FMaxMessageSend, write=FMaxMessageSend };
+    __property bool ResendEnable  = { read=GetResendEnable, write=SetResendEnable };
 };
 //---------------------------------------------------------------------------
 #endif

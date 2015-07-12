@@ -105,6 +105,7 @@ private:	// User declarations
     list<device_config_t*> lstDeviceConfig; // Device configure list
     long seed;  // Random seed
     unsigned int FMaxMessageSend;
+    bool FResendEnable;
 
     void __fastcall OperationButtonClick(TObject *Sender);
     WorkThread* __fastcall CreateWorkThread(int rowidx);

@@ -3120,8 +3120,8 @@ object FMain: TFMain
   OldCreateOrder = False
   OnClose = FormClose
   DesignSize = (
-    1028
-    355)
+    1036
+    360)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
