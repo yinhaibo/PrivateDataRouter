@@ -79,4 +79,13 @@ RawMsg::RawMsg(RawMsg* value){
     this->len = value->len;
     memcpy(this->stream, value->stream, MAX_MESSAGE_LEN);
 }
+bool RawMsg::operator==(const RawMsg &msg) const
+{
+    if (this->len == msg.len){
+        if (memcmp(this->stream, msg.stream, this->len) == 0){
+            return true;
+        }
+    }
+    return false;
+}
 

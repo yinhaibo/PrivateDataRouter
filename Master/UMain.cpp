@@ -1147,10 +1147,10 @@ short TFMain::GetPeerCHPort(int ch)
         AnsiString src = txtPeerPort->Text;
         int prepos = 1;
         int splitidx = 0;
-        int chidx = 0;
+        //int chidx = 0;
         for (int idx = 0; idx < src.Length(); idx++){
             if (src.c_str()[idx] == ','){
-                chidx++;
+                //chidx++;
                 AnsiString portStr = txtPeerPort->Text.SubString(prepos, idx - prepos + 1);
                 if (ch == splitidx){
                     return StrToInt(portStr);

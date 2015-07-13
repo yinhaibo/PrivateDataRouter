@@ -8,6 +8,9 @@
 #include "UMsgQueue.h"
 #include "UController.h"
 
+#include <queue>
+
+using namespace std;
 
 //---------------------------------------------------------------------------
 class WorkThreadMessage{
@@ -101,11 +104,13 @@ private:
     //Raw message queue
     RawMsgQueue* mRawMsgQueue;
 
+    //Local message queue
+    queue<RawMsg> queueLocalMsg;
 
     void processMessage();
 
-    void sendLocalMessage(Msg* pmsg);
-    void successTransMessage(Msg* pmsg);
+    void setLocalMsgSengingInfo(Msg* pmsg);
+    void successTransMessage();
     void reinitMessageCntVariant();
 protected:
     // Configure
@@ -116,12 +121,12 @@ protected:
     Controller* FController;
     Channel* FChannel;
     // Current message sequence which received from simulator
-    unsigned int FCurrentMsgSeq;
-    unsigned int FPrevMsgSeq;
-    unsigned short FCurrentMsgCRC;
-    unsigned short FPrevMsgCRC;
-    Msg* FPrevMsg; // Old message which has sent, keep for resent by master
-    bool FLocalMessage;
+    //unsigned int FCurrentMsgSeq;
+    //unsigned int FPrevMsgSeq;
+    //unsigned short FCurrentMsgCRC;
+    //unsigned short FPrevMsgCRC;
+    //Msg* FPrevMsg; // Old message which has sent, keep for resent by master
+    bool FLocalMessage; // message is loacal message, diff from peer side tag
     Channel* FDispatchChannel;
     
     work_status_t FStatus; // Current work status

@@ -11,6 +11,35 @@ enum WorkMode{
     WORK_MODE_SERIAL,
     WORK_MODE_TCP_SERVER,
 };
+//---------------------------------------------------------------------------
+// Message define
+#define MAX_CONTENT_LEN 10
+#define MIN_MESSAGE_LEN 18
+#define MAX_RAW_BUFFER_SIZE 1024
+// USING ONE BYTE ALIGNMENT
+#pragma pack(1)
+typedef struct _timestamp_t{
+    unsigned short year;
+    unsigned char  mon;
+    unsigned char  day;
+    unsigned char  hour;
+    unsigned char  min;
+    unsigned char  second;
+    unsigned short millisec;
+}timestamp_t;  //sizeof(timestamp_t) => 9
+typedef struct _message_t{
+    unsigned short head;            // Message head
+    unsigned short len;             // Message length
+    unsigned char  tag;             // Message tag, for indentified message which is
+                                    // sending by self.
+    unsigned int  seq;             // Sequence of message
+    timestamp_t   timestamp;        // Timestamp of message
+    unsigned char clen;             // Message content length
+    char content[MAX_CONTENT_LEN];  // Message content
+    unsigned short    crc16;        // CRC16 of the message from seq to content
+}message_t;
+#define MAX_MESSAGE_LEN  (sizeof(message_t))
+#pragma pack()
 
 ////////////////////////////////////////////////////////////////
 // Message count structure
@@ -56,8 +85,10 @@ public:
     int iMaxMsgQueue;       // Max Message queue size
 
     // For count
-    unsigned int sendSeq;
-    unsigned short sendCRC; 
+    //unsigned int sendSeq;
+    //unsigned short sendCRC;
+    unsigned char stream[MAX_MESSAGE_LEN];
+
     unsigned long sendTick;
     // Message count, one success message including send a message and eof message
     // and make sure the message have transfer correctly.
@@ -69,28 +100,7 @@ public:
     unsigned long msgRxCnt;  // the count of message have received
     unsigned long msgErrCnt; // The count of error message
 
-    device_config_t(){
-        sendSeq = 0;
-        sendTick = 0;
-
-        for (int i = 0; i < MAX_RETRANS_REC_CNT; i++){
-            resendTotal[i] = 0;
-        }
-        dcResendCnt.min = MAX_COUNT_VALUE;
-        dcResendCnt.max = MIN_COUNT_VALUE;
-        dcResendCnt.avg = 0.0f;
-        dcResendCnt.val = 0;
-
-        dcRespTime.min = MAX_COUNT_VALUE;
-        dcRespTime.max = MIN_COUNT_VALUE;
-        dcRespTime.avg = 0.0f;
-        dcRespTime.val = 0;
-
-        msgMsgSent = 0;
-        msgTxCnt = 0;
-        msgRxCnt = 0;
-        msgErrCnt = 0;
-    }
+    device_config_t();
 };
 
 
@@ -106,35 +116,6 @@ typedef struct master_config_t{
 #define ERROR_MODE_UNIFORM_IDX 1
 #define ERROR_MODE_POSSION_IDX 2
 
-//---------------------------------------------------------------------------
-// Message define
-#define MAX_CONTENT_LEN 10
-#define MIN_MESSAGE_LEN 18
-#define MAX_RAW_BUFFER_SIZE 1024
-// USING ONE BYTE ALIGNMENT
-#pragma pack(1)
-typedef struct _timestamp_t{
-    unsigned short year;
-    unsigned char  mon;
-    unsigned char  day;
-    unsigned char  hour;
-    unsigned char  min;
-    unsigned char  second;
-    unsigned short millisec;
-}timestamp_t;  //sizeof(timestamp_t) => 9
-typedef struct _message_t{
-    unsigned short head;            // Message head
-    unsigned short len;             // Message length
-    unsigned char  tag;             // Message tag, for indentified message which is
-                                    // sending by self.
-    unsigned int  seq;             // Sequence of message
-    timestamp_t   timestamp;        // Timestamp of message
-    unsigned char clen;             // Message content length
-    char content[MAX_CONTENT_LEN];  // Message content
-    unsigned short    crc16;        // CRC16 of the message from seq to content
-}message_t;
-#define MAX_MESSAGE_LEN  (sizeof(message_t))
-#pragma pack()
 
 ////////////////////////////////////////////////////////////////
 // Macro

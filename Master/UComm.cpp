@@ -8,6 +8,32 @@
 //---------------------------------------------------------------------------
 #include <SysUtils.hpp>
 #pragma package(smart_init)
+
+
+device_config_t::device_config_t(){
+    //sendSeq = 0;
+    memset(stream, 0, MAX_MESSAGE_LEN);
+    sendTick = 0;
+
+    for (int i = 0; i < MAX_RETRANS_REC_CNT; i++){
+        resendTotal[i] = 0;
+    }
+    dcResendCnt.min = MAX_COUNT_VALUE;
+    dcResendCnt.max = MIN_COUNT_VALUE;
+    dcResendCnt.avg = 0.0f;
+    dcResendCnt.val = 0;
+
+    dcRespTime.min = MAX_COUNT_VALUE;
+    dcRespTime.max = MIN_COUNT_VALUE;
+    dcRespTime.avg = 0.0f;
+    dcRespTime.val = 0;
+
+    msgMsgSent = 0;
+    msgTxCnt = 0;
+    msgRxCnt = 0;
+    msgErrCnt = 0;
+}
+
 //---------------------------------------------------------------------------
 static AnsiString SERIAL_WORK_MODE = "Serial port";
 static AnsiString TCP_SERVER_WORK_MODE = "TCP Server";

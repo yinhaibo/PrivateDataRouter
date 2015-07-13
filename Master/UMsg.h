@@ -90,6 +90,7 @@ public:
     RawMsg();
     RawMsg(const RawMsg& value);
     RawMsg(RawMsg* value);
+    bool operator==(const RawMsg &msg) const;
 }RawMsg;
 
 typedef enum MsgType

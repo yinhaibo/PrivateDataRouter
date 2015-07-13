@@ -18,7 +18,7 @@ object FMain: TFMain
   object Splitter1: TSplitter
     Left = 0
     Top = 321
-    Width = 897
+    Width = 905
     Height = 3
     Cursor = crVSplit
     Align = alTop
@@ -30,13 +30,13 @@ object FMain: TFMain
   object GroupBox1: TGroupBox
     Left = 0
     Top = 0
-    Width = 897
+    Width = 905
     Height = 321
     Align = alTop
     Caption = 'Devices'
     TabOrder = 0
     DesignSize = (
-      897
+      905
       321)
     object txtResult: TMemo
       Left = 8
@@ -71,7 +71,7 @@ object FMain: TFMain
   object Master: TGroupBox
     Left = 0
     Top = 324
-    Width = 897
+    Width = 905
     Height = 219
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
