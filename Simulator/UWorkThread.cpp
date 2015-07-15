@@ -36,7 +36,6 @@ __fastcall WorkThread::WorkThread(device_config_t* pDevCfg)
 {
     errorMsgPerMsg = -1;
     respMsgCnt = 0;
-    reconnectTick = 0;
     FPeerReady = false;
     isEnableWrite = false;
     sendSeq = 1; //reset send sequence number
@@ -123,7 +122,11 @@ void __fastcall WorkThread::Execute()
         case WORK_STATUS_LISTEN:         // Wait client to connect in server mode only.
             // pass through, just client connections
         case WORK_STATUS_WORKING:        // Wait receive and send message, go to connect while error occur.
-            processMessage();
+            try{
+                processMessage();
+            }catch(...){
+                FStatus = WORK_STATUS_DELAYCONNECT;
+            }
             Sleep(10);
             break;
         case WORK_STATUS_CLOSE_WORKING:  // Wait process all buffer data

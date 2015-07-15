@@ -32,20 +32,6 @@ void __fastcall ClientWorkThread::onStart()
     }
 }
 //---------------------------------------------------------------------------
-void __fastcall ClientWorkThread::onReStart()
-{
-    if (userOpen){
-        reconnectTick = ::GetTickCount();
-        if (mClient->Active){
-            mClient->Active = false;
-        }else{
-            mClient->Active = true;
-            LogMsg("Restart Event");
-        }
-
-    }
-}
-//---------------------------------------------------------------------------
 void __fastcall ClientWorkThread::onStop()
 {
     if (mClient->Active){
@@ -74,6 +60,9 @@ int __fastcall ClientWorkThread::sendData(unsigned char* pbuffer, int len)
                 }
             }
             LogMsg("Write :" + IntToStr(sendLen) + ", socket:" + IntToStr((int)mClient->Socket));
+            if (sendLen == -1){
+                return -1;
+            }
             return len;
         }catch(...){
             LogMsg("Socket error in write:" + IntToStr(mClient->Socket->Handle));
@@ -132,7 +121,6 @@ void ClientWorkThread::initParameters()
 void __fastcall ClientWorkThread::onSocketConnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
-    reconnectTick = 0;//Stop reconnect
     LogMsg("Socket connected:" + IntToStr(Socket->Handle));
     if (FOnOpenChannel != NULL){
         FOnOpenChannel(this, true);
@@ -149,7 +137,7 @@ void __fastcall ClientWorkThread::onSocketDisconnect(System::TObject* Sender,
         }catch(...){}
     }
     if (userOpen && autoReconnect){
-        reconnectTick = ::GetTickCount();
+        //throw new Exception("socket disconnect.");
     }else{
         mIsRunning = false;
         //if (FOnCloseChannel != NULL){
@@ -190,10 +178,12 @@ void __fastcall ClientWorkThread::socketErrorProcess()
 {
     if (mClient != NULL){
         try{
-        if (mClient->Active) mClient->Active = false;
+            if (mClient->Active){
+                mClient->Active = false;
+            }
         }catch(...){}
         if (userOpen && autoReconnect){
-            reconnectTick = ::GetTickCount();
+            FStatus = WORK_STATUS_DELAYCONNECT;
         }else{
             //if (FOnCloseChannel != NULL){
             //    FOnCloseChannel(this, true);

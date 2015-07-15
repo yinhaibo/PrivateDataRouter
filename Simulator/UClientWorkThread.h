@@ -32,7 +32,6 @@ protected:
     virtual void __fastcall onStart();
     virtual void __fastcall onStop();
     virtual void __fastcall onParameterChange();
-    virtual void __fastcall onReStart();
 
     virtual int __fastcall sendData(unsigned char* pbuffer, int len);
     virtual int __fastcall receiveData(unsigned char* pbuffer, int len);

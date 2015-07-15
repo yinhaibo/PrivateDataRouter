@@ -78,7 +78,6 @@ protected:
     bool mIsRunning;
     TOpenChannelEvent FOnOpenChannel;
     TCloseChannelEvent FOnCloseChannel;
-    unsigned int reconnectTick;
     bool autoReconnect;
 private:
     TRxMsgEvent FOnRxMsg;
@@ -99,8 +98,7 @@ private:
 
     void __fastcall processMessage();
 
-    work_status_t FStatus; // Current work status
-              // Wait, Connect, working, stop
+    
 
 
     // Generate error message while send specified message count
@@ -142,6 +140,9 @@ protected:
     
     bool bMessageOK; // The status of message received
 
+    work_status_t FStatus; // Current work status
+              // Wait, Connect, working, stop
+
     //Send buffer and receive buffer 
     unsigned char sendRawBuff[MAX_RAW_BUFFER_SIZE];
     unsigned char recvRawBuff[MAX_RAW_BUFFER_SIZE];
@@ -160,8 +161,6 @@ protected:
     // The delay control by this super class.
     virtual bool __fastcall onSendMessage(message_t& msg, int error);
     virtual message_t* __fastcall onReceiveMessage();
-    // reconnect, do nothing, subclass will override
-    virtual void __fastcall onReStart(){};
 
     void LogMsg(AnsiString msg);
     void LogMsg(message_t* pmsg, AnsiString text);
