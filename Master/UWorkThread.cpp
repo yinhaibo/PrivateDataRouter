@@ -268,7 +268,7 @@ RawMsg* __fastcall WorkThread::onReceiveMessage(int error)
 void WorkThread::processMessage()
 {
     #ifdef _DEBUG
-    char buff[40];
+    char buff[80];
     #endif
     /////////////////////////////
     // Receive message from device
@@ -277,63 +277,28 @@ void WorkThread::processMessage()
     if (prawmsg != NULL){
         rxMsgCnt++;
         if (bMessageOK){
-            // Receive and make a copy for device message
-            if (FLocalMessage && !(prawmsg->operator ==(queueLocalMsg.back()))){
-                // a new local message
-                #ifdef _DEBUG
-                LogMsg(*prawmsg, "Receive a new local message, buffer and push to master");
-                #endif
-                if (FController != NULL){
-                    // push a message to master
-                    Msg* pmsg = new Msg(
-                            mpDevCfg->source.c_str(),
-                            mpDevCfg->dest.c_str(),
-                            prawmsg->stream, prawmsg->len);
-
-                    setLocalMsgSengingInfo(pmsg);
-                    #ifdef _DEBUG
-                    snprintf(buff, 40, "%s--> new Msg:%08ul", FName.c_str(), pmsg->msgid);
-                    logger.Log(buff);
-                    #endif
+            if (FLocalMessage){
+                if (queueLocalMsg.size() > 0 &&
+                    prawmsg->operator ==(queueLocalMsg.back())){
+                    // Repeat message send by simulator
+                    // just drop it and wait message queueing
+                }else{
+                    // New message send by simulator
+                    // add to queue and message queueuing
                     queueLocalMsg.push(RawMsg(prawmsg));
-                    #ifdef _DEBUG
-                    snprintf(buff, 40, "%s--> new bak Msg:%08ul", FName.c_str(),  FPrevMsg->msgid);
-                    logger.Log(buff);
-                    LogMsg("dispatch message to master");
-                    #endif
-                    FDispatchChannel = FController->dispatchMsg(FChannel, pmsg);
-                    FMsgSendTick = ::GetTickCount();
                 }
             }else{
-                // The device send a retransmillion(see Local Message Flag)
-                // or response message, the device proxy send to master
+                // Non-Local message, forwarding
+                Msg* pmsg = new Msg(
+                    mpDevCfg->source.c_str(),
+                    mpDevCfg->dest.c_str(),
+                    prawmsg->stream, prawmsg->len);
+
                 #ifdef _DEBUG
-                LogMsg(*prawmsg, "Receive a new message, push to master");
+                snprintf(buff, 80, "%s-->> new Msg:%08ul", FName.c_str(), pmsg->msgid);
+                logger.Log(buff);
                 #endif
-                //duplicate message, push to master
-                if (FController != NULL){
-                    Msg* pmsg = new Msg(
-                        mpDevCfg->source.c_str(),
-                        mpDevCfg->dest.c_str(),
-                        prawmsg->stream, prawmsg->len);
-
-                    #ifdef _DEBUG
-                    snprintf(buff, 40, "%s-->> new Msg:%08ul", FName.c_str(), pmsg->msgid);
-                    logger.Log(buff);
-                    #endif
-                    if (FLocalMessage){
-                        setLocalMsgSengingInfo(pmsg);
-
-                        #ifdef ENABLE_PRIORITY
-                        FController->decChannelPriority(FDispatchChannel);
-                        #endif
-                        FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
-                        // Only reset message send tick in retransmission local message
-                        FMsgSendTick = ::GetTickCount();
-                    }else{
-                        FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
-                    }
-                }
+                FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
             }
         }else{
             // error message, just wait a normal message
@@ -367,12 +332,16 @@ void WorkThread::processMessage()
     if (queueLocalMsg.size() > 0 &&
         ::GetTickCount() - FMsgSendTick > FReSendInterval){
         #ifdef _DEBUG
-        LogMsg(queueLocalMsg.front().rawmsg, "retransmission message to master");
+        LogMsg(queueLocalMsg.front(), "retransmission message to master");
         #endif
         Msg* pmsg = new Msg(
                         mpDevCfg->source.c_str(),
                         mpDevCfg->dest.c_str(),
                         queueLocalMsg.front().stream, queueLocalMsg.front().len);
+        #ifdef _DEBUG
+        snprintf(buff, 40, "%s-->> resend: new Msg:%08ul", FName.c_str(), pmsg->msgid);
+        logger.Log(buff);
+        #endif
         setLocalMsgSengingInfo(pmsg);
         if (FController != NULL){
             #ifdef ENABLE_PRIORITY
@@ -386,7 +355,7 @@ void WorkThread::processMessage()
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::Execute()
 {
-    logger.Log("Work Thread [" + IntToStr(this->ThreadID) + "] start.");
+    logger.Log(AnsiString("Work Thread [") + IntToStr(this->ThreadID) + "] start.");
     onInit();
     //---- Place thread code here ----
     while(!this->Terminated){
@@ -424,7 +393,7 @@ void __fastcall WorkThread::Execute()
             FStatus = WORK_STATUS_WAIT;
         }
     }
-    logger.Log("Work Thread [" + IntToStr(this->ThreadID) + "] exit.");
+    logger.Log(AnsiString("Work Thread [") + IntToStr(this->ThreadID) + "] exit.");
 }
 //---------------------------------------------------------------------------
 void __fastcall WorkThread::updateUIEvent(
@@ -489,8 +458,9 @@ void WorkThread::Push(Msg* pmsg)
             }
             RawMsg* rawmsg = new RawMsg(pmsg->rawmsg);
             mRawMsgQueue->Push(rawmsg);
-
-            char buff[40];
+            #ifdef _DEBUG
+            char buff[80];
+            #endif
             
             // check message is send success or not
             if (queueLocalMsg.size() > 0 &&
@@ -506,10 +476,14 @@ void WorkThread::Push(Msg* pmsg)
                     FDispatchChannel = NULL;
                 }
                 queueLocalMsg.pop();
+                #ifdef _DEBUG
+                snprintf(buff, 80, "success trans message, queueLocalMsg:%d", queueLocalMsg.size());
+                logger.Log(buff);
+                #endif
             }
             
             #ifdef _DEBUG
-            snprintf(buff, 40, "delete Msg:%08ul", pmsg->msgid);
+            snprintf(buff, 80, "delete Msg:%08ul", pmsg->msgid);
             logger.Log(buff);
             #endif
             delete pmsg;
@@ -652,7 +626,7 @@ void WorkThread::setLocalMsgSengingInfo(Msg* pmsg)
     }else if (memcmp(mpDevCfg->stream, pmsg->rawmsg.stream, pmsg->rawmsg.len) == 0){
         mpDevCfg->dcResendCnt.val++;
         #ifdef _DEBUG
-        LogMsg(pmsg->rawmsg, " send Times:" +
+        LogMsg(pmsg->rawmsg, " Resend Times:" +
             IntToStr(mpDevCfg->dcResendCnt.val));
         #endif
     }else{
