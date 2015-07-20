@@ -74,7 +74,6 @@ int __fastcall SerialWorkThread::receiveData(unsigned char* pbuffer, int len)
     if (rdlen == -1){
         // No data to read
         receivePos = 0;
-        hasDataRead = false;
         return -1;
     }
     receivePos += rdlen;

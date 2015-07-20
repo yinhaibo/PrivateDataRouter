@@ -20,8 +20,6 @@ private:
     // Client socket event
     void __fastcall onSocketConnect(System::TObject* Sender, TCustomWinSocket* Socket);
     void __fastcall onSocketDisconnect(System::TObject* Sender, TCustomWinSocket* Socket);
-    void __fastcall onSocketRead(System::TObject* Sender, TCustomWinSocket* Socket);
-    void __fastcall onSocketWrite(System::TObject* Sender, TCustomWinSocket* Socket);
     void __fastcall onSocketError(System::TObject* Sender,
         TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode);
 

@@ -14,7 +14,7 @@ __fastcall ClientWorkThread::ClientWorkThread(device_config_t* pDevCfg)
     : WorkThread(pDevCfg)
 {
     receivePos = 0; //Rest receive position to zero
-    hasDataRead = false;
+
     autoReconnect = true;
     userOpen = false;
     initParameters();
@@ -86,7 +86,6 @@ int __fastcall ClientWorkThread::receiveData(unsigned char* pbuffer, int len)
     if (rdlen == -1){
         // No data to read
         receivePos = 0;
-        hasDataRead = false;
         return -1;
     }
     receivePos += rdlen;
@@ -114,8 +113,6 @@ void ClientWorkThread::initParameters()
     mClient->ClientType = ctBlocking;
     mClient->OnConnect = onSocketConnect;
     mClient->OnDisconnect = onSocketDisconnect;
-    mClient->OnRead = onSocketRead;
-    mClient->OnWrite = onSocketWrite;
     mClient->OnError = onSocketError;
 }
 void __fastcall ClientWorkThread::onSocketConnect(System::TObject* Sender,
@@ -145,25 +142,6 @@ void __fastcall ClientWorkThread::onSocketDisconnect(System::TObject* Sender,
         //}
     }
     FPeerReady = false;
-}
-void __fastcall ClientWorkThread::onSocketRead(System::TObject* Sender,
-    TCustomWinSocket* Socket)
-{
-    if (mClient != NULL){
-        hasDataRead = true;
-        //LogMsg("Read event.");
-    }
-}
-void __fastcall ClientWorkThread::onSocketWrite(System::TObject* Sender,
-    TCustomWinSocket* Socket)
-{
-    LogMsg("On Write.");
-    char buff[6] = {0x30, 0x31, 0x32, 0x33, 0x34, 0x00};
-    Socket->SendBuf(buff, 5);
-    Socket->SendText("hello");
-    if (mClient != NULL){
-        isEnableWrite = true;
-    }
 }
 
 void __fastcall ClientWorkThread::onSocketError(System::TObject* Sender,
