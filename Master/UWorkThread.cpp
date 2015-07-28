@@ -70,6 +70,8 @@ __fastcall WorkThread::WorkThread(device_config_t* pDevCfg,
     snprintf(buff, 50, "Work Thread [%d,%s] New.",
         this->ThreadID, FName.c_str());
     logger.Log(buff);
+
+    bNextMsgFlag = true;
 }
 //---------------------------------------------------------------------------
 __fastcall WorkThread::~WorkThread()
@@ -334,22 +336,37 @@ void WorkThread::processMessage()
         #ifdef _DEBUG
         LogMsg(queueLocalMsg.front(), "retransmission message to master");
         #endif
-        Msg* pmsg = new Msg(
-                        mpDevCfg->source.c_str(),
-                        mpDevCfg->dest.c_str(),
-                        queueLocalMsg.front().stream, queueLocalMsg.front().len);
-        #ifdef _DEBUG
-        snprintf(buff, 40, "%s-->> resend: new Msg:%08ul", FName.c_str(), pmsg->msgid);
-        logger.Log(buff);
-        #endif
-        setLocalMsgSengingInfo(pmsg);
-        if (FController != NULL){
-            #ifdef ENABLE_PRIORITY
-            FController->decChannelPriority(FDispatchChannel);
+        if (mpDevCfg->iMaxRetransCnt < 0 ||
+           (mpDevCfg->iMaxRetransCnt >= 0 &&
+            mpDevCfg->iCurRetransCnt <= mpDevCfg->iMaxRetransCnt)){
+            mpDevCfg->iCurRetransCnt++;
+            // build message and dispatch to master
+            Msg* pmsg = new Msg(
+                            mpDevCfg->source.c_str(),
+                            mpDevCfg->dest.c_str(),
+                            queueLocalMsg.front().stream, queueLocalMsg.front().len);
+            #ifdef _DEBUG
+            snprintf(buff, 80, "%s-->> resend: new Msg:%08ul", FName.c_str(), pmsg->msgid);
+            logger.Log(buff);
             #endif
-            FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
+            setLocalMsgSengingInfo(pmsg);
+            if (FController != NULL){
+                #ifdef ENABLE_PRIORITY
+                FController->decChannelPriority(FDispatchChannel);
+                #endif
+                FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel, bNextMsgFlag);
+                bNextMsgFlag = false;
+            }
+            FMsgSendTick = ::GetTickCount();
+        }else{
+            queueLocalMsg.pop();
+            mpDevCfg->iCurRetransCnt = 0;
+            if (FDispatchChannel != NULL){
+                bNextMsgFlag = true;
+            }
+            snprintf(buff, 80, "cancel a message from queue because of retrans limited.");
+            logger.Log(buff);
         }
-        FMsgSendTick = ::GetTickCount();
     }
 }
 //---------------------------------------------------------------------------
@@ -473,9 +490,10 @@ void WorkThread::Push(Msg* pmsg)
                     #ifdef ENABLE_PRIORITY
                     FController->incChannelPriority(FDispatchChannel);
                     #endif
-                    FDispatchChannel = NULL;
+                    bNextMsgFlag = true;
                 }
                 queueLocalMsg.pop();
+                mpDevCfg->iCurRetransCnt = 0;
                 #ifdef _DEBUG
                 snprintf(buff, 80, "success trans message, queueLocalMsg:%d", queueLocalMsg.size());
                 logger.Log(buff);
@@ -497,11 +515,24 @@ void WorkThread::Push(Msg* pmsg)
                     #endif
 
                     delete pmsg;
-                    Msg* pmsg = new Msg(
-                        mpDevCfg->source.c_str(),
-                        mpDevCfg->dest.c_str(),
-                        queueLocalMsg.front().stream, queueLocalMsg.front().len);
-                    FController->dispatchMsg(FChannel, pmsg);
+                    if (mpDevCfg->iMaxRetransCnt < 0 ||
+                       (mpDevCfg->iMaxRetransCnt > 0 &&
+                        mpDevCfg->iCurRetransCnt <= mpDevCfg->iMaxRetransCnt)){
+                        mpDevCfg->iCurRetransCnt++;
+                        // retransform current message
+                        Msg* pmsg = new Msg(
+                            mpDevCfg->source.c_str(),
+                            mpDevCfg->dest.c_str(),
+                            queueLocalMsg.front().stream, queueLocalMsg.front().len);
+                        FController->dispatchMsg(FChannel, pmsg, FDispatchChannel, bNextMsgFlag);
+                        bNextMsgFlag = false;
+                    }else{
+                        queueLocalMsg.pop();
+                        mpDevCfg->iCurRetransCnt = 0;
+                        if (FDispatchChannel != NULL){
+                            bNextMsgFlag = true;
+                        }
+                    }
                 }
             }else{
                 // these is a error message from source channel

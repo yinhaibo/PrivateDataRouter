@@ -283,15 +283,21 @@ object FMain: TFMain
       Brush.Color = clOlive
       Shape = stCircle
     end
+    object lblRetransCount: TLabel
+      Left = 776
+      Top = 160
+      Width = 105
+      Height = 13
+      Caption = 'Retransmission Count:'
+      Enabled = False
+    end
     object rbMasterClientMode: TRadioButton
       Left = 8
       Top = 16
       Width = 81
       Height = 17
       Caption = 'Client Mode'
-      Checked = True
       TabOrder = 0
-      TabStop = True
       OnClick = rbMasterClientModeClick
     end
     object rbMasterServerMode: TRadioButton
@@ -679,6 +685,45 @@ object FMain: TFMain
       Caption = '&Result'
       TabOrder = 11
       OnClick = btnResultClick
+    end
+    object rbRetransSameCh: TRadioButton
+      Left = 568
+      Top = 144
+      Width = 185
+      Height = 17
+      Caption = 'Retransmission in &same channel.'
+      Checked = True
+      TabOrder = 12
+      TabStop = True
+      OnClick = rbRetransSameChClick
+    end
+    object RadioButton1: TRadioButton
+      Left = 568
+      Top = 160
+      Width = 185
+      Height = 17
+      Caption = 'Retransmission in &next channel.'
+      TabOrder = 13
+      OnClick = RadioButton1Click
+    end
+    object txtRetransCount: TEdit
+      Left = 848
+      Top = 176
+      Width = 33
+      Height = 21
+      Enabled = False
+      TabOrder = 14
+      Text = '1'
+      OnChange = txtRetransCountChange
+    end
+    object chkLimitRetrans: TCheckBox
+      Left = 776
+      Top = 144
+      Width = 113
+      Height = 17
+      Caption = 'Limit retransmisson'
+      TabOrder = 15
+      OnClick = chkLimitRetransClick
     end
   end
   object mnuMain: TMainMenu

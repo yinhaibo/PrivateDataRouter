@@ -100,6 +100,10 @@ public:
     unsigned long msgRxCnt;  // the count of message have received
     unsigned long msgErrCnt; // The count of error message
 
+    int  iMaxRetransCnt; // the number of retransmission of current message
+                          // -1 indicate no limit for retransmission
+    int  iCurRetransCnt;
+
     device_config_t();
 };
 

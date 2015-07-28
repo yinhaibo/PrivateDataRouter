@@ -44,24 +44,31 @@ public:
 class IDispatcher
 {
 public:
-    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL) = 0;
+    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL, bool newmsg = true) = 0;
     virtual Channel* dispatchMsg(Msg* pmsg) = 0;
 };
+
+typedef enum _RETRANS_MODE{
+    RETRANS_MODE_SAME, // retransmission in the same channel
+    RETRANS_MODE_NEXT, // retransmission in the next channel
+}RETRANS_MODE;
 
 class Controller : public IDispatcher
 {
 private:
     TCriticalSection* csWorkVar;
     list<Channel*> lstChannel;
+    RETRANS_MODE retransModel;
     
-    Channel* dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch);
+    Channel* dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch, bool newmsg);
+    Channel* getNextDispatchMsgCh(char* dest, Channel* lastch, bool newmsg);
 
     void LogMsg(const Channel* fromch, const Channel* toch,
         const Msg* msg, AnsiString text);
 
-    Channel* getDispatchMsgCh(char* dest, Channel* lastch = NULL);
+    Channel* getDispatchMsgCh(char* dest, Channel* lastch = NULL, bool newmsg = true);
 public:
-    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL);
+    virtual Channel* dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch = NULL, bool newmsg = true);
     virtual Channel* dispatchMsg(Msg* pmsg);
 
     Channel* registerChannel(const AnsiString& aliasString, IMsgPush* executer,
@@ -69,6 +76,8 @@ public:
     void unregisterChannel(Channel* channel);
     bool incChannelPriority(Channel* channel);
     bool decChannelPriority(Channel* channel);
+
+    void setRetransMode(RETRANS_MODE mode);
 
     Controller();
     ~Controller();

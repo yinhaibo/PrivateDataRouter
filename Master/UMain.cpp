@@ -1470,3 +1470,55 @@ void __fastcall TFMain::tmrWriteResultTimer(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TFMain::chkLimitRetransClick(TObject *Sender)
+{
+    txtRetransCount->Enabled = chkLimitRetrans->Checked;
+    lblRetransCount->Enabled = chkLimitRetrans->Checked;
+
+    int retransCnt = -1;
+
+    if (chkLimitRetrans->Checked){
+        retransCnt = StrToInt(txtRetransCount->Text);
+    }
+
+    device_config_t* pDevCfg;
+    list<device_config_t*>::iterator it;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        pDevCfg->iMaxRetransCnt = retransCnt;
+    }    
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::rbRetransSameChClick(TObject *Sender)
+{
+    mController.setRetransMode(RETRANS_MODE_SAME);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::RadioButton1Click(TObject *Sender)
+{
+    mController.setRetransMode(RETRANS_MODE_NEXT);    
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TFMain::txtRetransCountChange(TObject *Sender)
+{
+    int retransCnt;
+    retransCnt = StrToInt(txtRetransCount->Text);
+
+    device_config_t* pDevCfg;
+    list<device_config_t*>::iterator it;
+    for (it = lstDeviceConfig.begin();
+         it != lstDeviceConfig.end();
+         ++it)
+    {
+        pDevCfg = *it;
+        pDevCfg->iMaxRetransCnt = retransCnt;
+    }
+}
+//---------------------------------------------------------------------------
+

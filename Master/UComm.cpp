@@ -32,6 +32,9 @@ device_config_t::device_config_t(){
     msgTxCnt = 0;
     msgRxCnt = 0;
     msgErrCnt = 0;
+
+    iMaxRetransCnt = -1; // No limit for retransmission
+    iCurRetransCnt = 0;
 }
 
 //---------------------------------------------------------------------------

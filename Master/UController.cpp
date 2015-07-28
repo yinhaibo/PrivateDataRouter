@@ -161,6 +161,7 @@ const AnsiString& Channel::getAliasString() const
 Controller::Controller()
 {
     csWorkVar = new TCriticalSection();
+    retransModel = RETRANS_MODE_NEXT; // default to retransfrom in the next channel
 }
 
 Controller::~Controller()
@@ -202,42 +203,64 @@ Channel* Controller::dispatchMsg(Msg* pmsg)
 {
     return dispatchMsg(NULL, pmsg);
 }
-Channel* Controller::dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch)
+Channel* Controller::dispatchMsg(Channel* channel, Msg* pmsg, Channel* lastch, bool newmsg)
 {
     Channel* rv = 0;
     if (csWorkVar != NULL){
         try{
             csWorkVar->Enter();
-            rv = dispatchMsgSafe(channel, pmsg, lastch);
+            rv = dispatchMsgSafe(channel, pmsg, lastch, newmsg);
         }__finally{
             csWorkVar->Leave();
         }
     }else{
-        rv = dispatchMsgSafe(channel, pmsg, lastch);
+        rv = dispatchMsgSafe(channel, pmsg, lastch, newmsg);
     }
 
     return rv;
 }
 
-Channel* Controller::getDispatchMsgCh(char* dest, Channel* lastch)
+Channel* Controller::getDispatchMsgCh(char* dest, Channel* lastch, bool newmsg)
+{
+
+    if (newmsg){
+        return getNextDispatchMsgCh(dest, lastch, newmsg);
+    }else{
+        switch (retransModel){
+            case RETRANS_MODE_SAME: // retransmission in the same channel
+                return lastch;
+            case RETRANS_MODE_NEXT: // retransmission in the next channel
+            default:
+                return getNextDispatchMsgCh(dest, lastch, newmsg);
+        }
+    }
+}
+
+Channel* Controller::getNextDispatchMsgCh(char* dest, Channel* lastch, bool newmsg)
 {
     Channel* selectCh = NULL;
     Channel* currentCh;
+    #ifdef ENABLE_PRORITY
     int maxPriority = 0x80000000; //Min priority
+    #endif
     list<Channel*>::iterator it;
-
+    bool selectNext = false;
+    
     for (it = lstChannel.begin();
          it != lstChannel.end();
          ++it){
          currentCh = *it;
          if (currentCh != NULL && currentCh->hasAlias(dest)){
-            if (lastch == NULL){
-                // default to using priority
-                if (currentCh->getPriority() > maxPriority){
-                    maxPriority = currentCh->getPriority();
-                    selectCh = currentCh;
-                }
-            }else{
+            if (selectCh == NULL){
+                // set first channel to selected channel
+                selectCh = currentCh;
+            }
+            if (selectNext){
+                selectCh = currentCh;
+                break;
+            }
+            if (lastch == currentCh){
+                #ifdef ENABLE_PRORITY
                 // find the channel which have max priority less that current CH
                 if (lastch != currentCh &&
                     currentCh->getPriority() <= lastch->getPriority()){
@@ -246,25 +269,25 @@ Channel* Controller::getDispatchMsgCh(char* dest, Channel* lastch)
                         selectCh = currentCh;
                     }
                 }
+                #else
+                // one by one
+                selectNext = true;
+                #endif
             }
         }
-    }
-    if (lastch != NULL && selectCh == NULL){
-        // last CH is lest channel
-        return getDispatchMsgCh(dest, NULL);
     }
 
     return selectCh;
 }
 
-Channel* Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch)
+Channel* Controller::dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch, bool newmsg)
 {
     AnsiString dest = AnsiString(pmsg->to);
     Channel* selectCh = NULL;
     bool dispatchSucc = false;
     
     if (pmsg->msgtype == MSGTYPE_DATA){
-        selectCh = getDispatchMsgCh(dest.c_str(), lastch);
+        selectCh = getDispatchMsgCh(dest.c_str(), lastch, newmsg);
 
         if (selectCh != NULL){
             // allow send to channel which has highest priority
@@ -386,5 +409,11 @@ bool Controller::decChannelPriority(Channel* channel)
     return false;
 }
 #endif
+
+void Controller::setRetransMode(RETRANS_MODE mode)
+{
+    retransModel = mode;
+}
+
 
 

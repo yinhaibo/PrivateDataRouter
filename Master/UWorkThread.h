@@ -128,6 +128,7 @@ protected:
     //Msg* FPrevMsg; // Old message which has sent, keep for resent by master
     bool FLocalMessage; // message is loacal message, diff from peer side tag
     Channel* FDispatchChannel;
+    bool bNextMsgFlag;
     
     work_status_t FStatus; // Current work status
                            // Wait, Connect, working, stop

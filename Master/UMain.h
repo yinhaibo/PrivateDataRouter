@@ -133,6 +133,11 @@ __published:	// IDE-managed Components
     TMemo *txtResult;
     TButton *btnResult;
     TTimer *tmrWriteResult;
+    TRadioButton *rbRetransSameCh;
+    TRadioButton *RadioButton1;
+    TEdit *txtRetransCount;
+    TCheckBox *chkLimitRetrans;
+    TLabel *lblRetransCount;
     void __fastcall Exit1Click(TObject *Sender);
     void __fastcall rbMasterClientModeClick(TObject *Sender);
     void __fastcall rbMasterServerModeClick(TObject *Sender);
@@ -153,6 +158,10 @@ __published:	// IDE-managed Components
     void __fastcall btnResultClick(TObject *Sender);
     void __fastcall txtResultDblClick(TObject *Sender);
     void __fastcall tmrWriteResultTimer(TObject *Sender);
+    void __fastcall chkLimitRetransClick(TObject *Sender);
+    void __fastcall rbRetransSameChClick(TObject *Sender);
+    void __fastcall RadioButton1Click(TObject *Sender);
+    void __fastcall txtRetransCountChange(TObject *Sender);
 private:	// User declarations
     String FName;
     map<int, WorkItem> mWorkItems;
@@ -192,8 +201,6 @@ private:	// User declarations
 
     //Controller
     Controller mController;
-
-    Controller* ctrl;
 
     //Calc Rx and Tx statics
     unsigned int mRxStartTick;
