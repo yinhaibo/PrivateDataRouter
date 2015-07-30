@@ -211,11 +211,12 @@ void __fastcall WorkThread::processMessage()
                         receiveMsg.clen == mMessage.clen &&
                         receiveMsg.crc16 == mMessage.crc16)
                     {
-                        LogMsg("Rx Message, Seq:" + IntToStr(sendSeq));
+                        LogMsg("Rx Message, Seq:" + IntToStr(sendSeq) + ",Send EOF.");
                         // Message has sent successfullly
                         // and Send EOF message immediatelly
                         msgStatus = MESSAGE_SEND_EOFMESSAGE;
                         fillMessageStruct(mEOFMessage);
+                        lastRequestTick = ::GetTickCount();
                         if (onSendMessage(mEOFMessage, 0)){
                             txMsgCnt++;
                         }
@@ -376,9 +377,7 @@ message_t* __fastcall WorkThread::onReceiveMessage()
     int rvRecv;
     unsigned short rvCRC16;
     unsigned short head;
-    if(!(hasDataRead)){
-        return NULL;
-    }
+
     switch(mMsgStatus){
     case RECV_MSG_STATUS_HEAD:
         bMessageOK = false; // Message has no OK

@@ -224,19 +224,19 @@ Channel* Controller::getDispatchMsgCh(char* dest, Channel* lastch, bool newmsg)
 {
 
     if (newmsg){
-        return getNextDispatchMsgCh(dest, lastch, newmsg);
+        return getNextDispatchMsgCh(dest, lastch);
     }else{
         switch (retransModel){
             case RETRANS_MODE_SAME: // retransmission in the same channel
                 return lastch;
             case RETRANS_MODE_NEXT: // retransmission in the next channel
             default:
-                return getNextDispatchMsgCh(dest, lastch, newmsg);
+                return getNextDispatchMsgCh(dest, lastch);
         }
     }
 }
 
-Channel* Controller::getNextDispatchMsgCh(char* dest, Channel* lastch, bool newmsg)
+Channel* Controller::getNextDispatchMsgCh(char* dest, Channel* lastch)
 {
     Channel* selectCh = NULL;
     Channel* currentCh;

@@ -300,7 +300,8 @@ void WorkThread::processMessage()
                 snprintf(buff, 80, "%s-->> new Msg:%08ul", FName.c_str(), pmsg->msgid);
                 logger.Log(buff);
                 #endif
-                FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
+                FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel, bNextMsgFlag);
+                bNextMsgFlag = false;
             }
         }else{
             // error message, just wait a normal message
@@ -364,8 +365,10 @@ void WorkThread::processMessage()
             if (FDispatchChannel != NULL){
                 bNextMsgFlag = true;
             }
+            #ifdef _DEBUG
             snprintf(buff, 80, "cancel a message from queue because of retrans limited.");
             logger.Log(buff);
+            #endif
         }
     }
 }
@@ -524,8 +527,7 @@ void WorkThread::Push(Msg* pmsg)
                             mpDevCfg->source.c_str(),
                             mpDevCfg->dest.c_str(),
                             queueLocalMsg.front().stream, queueLocalMsg.front().len);
-                        FController->dispatchMsg(FChannel, pmsg, FDispatchChannel, bNextMsgFlag);
-                        bNextMsgFlag = false;
+                        FDispatchChannel = FController->dispatchMsg(FChannel, pmsg, FDispatchChannel);
                     }else{
                         queueLocalMsg.pop();
                         mpDevCfg->iCurRetransCnt = 0;

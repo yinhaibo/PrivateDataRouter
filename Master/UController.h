@@ -61,7 +61,7 @@ private:
     RETRANS_MODE retransModel;
     
     Channel* dispatchMsgSafe(Channel* channel, Msg* pmsg, Channel* lastch, bool newmsg);
-    Channel* getNextDispatchMsgCh(char* dest, Channel* lastch, bool newmsg);
+    Channel* getNextDispatchMsgCh(char* dest, Channel* lastch);
 
     void LogMsg(const Channel* fromch, const Channel* toch,
         const Msg* msg, AnsiString text);

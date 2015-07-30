@@ -53,7 +53,7 @@ int __fastcall ClientWorkThread::sendData(unsigned char* pbuffer, int len)
         try{
             int sendLen = 0;
             while(mClient->Socket->Connected && sendLen < len){
-                sendLen = mClient->Socket->SendBuf(pbuffer + sendPos,
+                sendLen = pStream->Write(pbuffer + sendPos,
                     len - sendPos);
                 if (sendLen > 0){
                     sendPos += sendLen;
@@ -80,19 +80,23 @@ int __fastcall ClientWorkThread::sendData(unsigned char* pbuffer, int len)
 // receive procedure.
 int __fastcall ClientWorkThread::receiveData(unsigned char* pbuffer, int len)
 {
-    long rdlen = mClient->Socket->ReceiveBuf(pbuffer + receivePos,
+    if (pStream->WaitForData(100)){
+        long rdlen = pStream->Read(pbuffer + receivePos,
             len - receivePos);
-    //LogMsg("Received :" + IntToStr(rdlen));
-    if (rdlen == -1){
-        // No data to read
-        receivePos = 0;
-        return -1;
+        //LogMsg("Received :" + IntToStr(rdlen));
+        if (rdlen == -1){
+            // No data to read
+            receivePos = 0;
+            return -1;
+        }
+        receivePos += rdlen;
+        if (receivePos == len){
+            receivePos = 0;
+            return len;
+        }else return receivePos;
+    }else{
+        return 0;
     }
-    receivePos += rdlen;
-    if (receivePos == len){
-        receivePos = 0;
-        return len;
-    }else return receivePos;
 }
 
 //---------------------------------------------------------------------------
@@ -119,6 +123,7 @@ void __fastcall ClientWorkThread::onSocketConnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
     LogMsg("Socket connected:" + IntToStr(Socket->Handle));
+    pStream = new TWinSocketStream(Socket, 100);
     if (FOnOpenChannel != NULL){
         FOnOpenChannel(this, true);
     }
@@ -128,6 +133,7 @@ void __fastcall ClientWorkThread::onSocketDisconnect(System::TObject* Sender,
     TCustomWinSocket* Socket)
 {
     LogMsg("Socket disconnected:" + IntToStr(Socket->Handle));
+    delete pStream;
     if (mClient != NULL && mClient->Active){
         try{
         mClient->Active = false;

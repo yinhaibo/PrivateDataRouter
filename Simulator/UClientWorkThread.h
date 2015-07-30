@@ -11,6 +11,7 @@ class ClientWorkThread : public WorkThread
 {
 private:
     TClientSocket* mClient;
+    TWinSocketStream* pStream;
     
     bool userOpen;
     

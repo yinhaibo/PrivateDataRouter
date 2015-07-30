@@ -2,7 +2,7 @@ object FMain: TFMain
   Left = 273
   Top = 116
   Width = 913
-  Height = 602
+  Height = 611
   Caption = 'Master'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -72,7 +72,7 @@ object FMain: TFMain
     Left = 0
     Top = 324
     Width = 905
-    Height = 219
+    Height = 228
     Align = alTop
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Master'
@@ -327,7 +327,7 @@ object FMain: TFMain
     end
     object btnClear: TButton
       Left = 568
-      Top = 189
+      Top = 197
       Width = 75
       Height = 25
       Caption = '&Clear'
@@ -679,32 +679,12 @@ object FMain: TFMain
     end
     object btnResult: TButton
       Left = 648
-      Top = 188
+      Top = 196
       Width = 75
       Height = 25
       Caption = '&Result'
       TabOrder = 11
       OnClick = btnResultClick
-    end
-    object rbRetransSameCh: TRadioButton
-      Left = 568
-      Top = 144
-      Width = 185
-      Height = 17
-      Caption = 'Retransmission in &same channel.'
-      Checked = True
-      TabOrder = 12
-      TabStop = True
-      OnClick = rbRetransSameChClick
-    end
-    object RadioButton1: TRadioButton
-      Left = 568
-      Top = 160
-      Width = 185
-      Height = 17
-      Caption = 'Retransmission in &next channel.'
-      TabOrder = 13
-      OnClick = RadioButton1Click
     end
     object txtRetransCount: TEdit
       Left = 848
@@ -712,7 +692,7 @@ object FMain: TFMain
       Width = 33
       Height = 21
       Enabled = False
-      TabOrder = 14
+      TabOrder = 12
       Text = '1'
       OnChange = txtRetransCountChange
     end
@@ -722,8 +702,35 @@ object FMain: TFMain
       Width = 113
       Height = 17
       Caption = 'Limit retransmisson'
-      TabOrder = 15
+      TabOrder = 13
       OnClick = chkLimitRetransClick
+    end
+    object GroupBox3: TGroupBox
+      Left = 568
+      Top = 136
+      Width = 201
+      Height = 57
+      TabOrder = 14
+      object rbRetransSameCh: TRadioButton
+        Left = 8
+        Top = 16
+        Width = 185
+        Height = 17
+        Caption = 'Retransmission in &same channel.'
+        Checked = True
+        TabOrder = 0
+        TabStop = True
+        OnClick = rbRetransSameChClick
+      end
+      object RadioButton1: TRadioButton
+        Left = 8
+        Top = 32
+        Width = 185
+        Height = 17
+        Caption = 'Retransmission in &next channel.'
+        TabOrder = 1
+        OnClick = RadioButton1Click
+      end
     end
   end
   object mnuMain: TMainMenu

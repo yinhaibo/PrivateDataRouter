@@ -1,6 +1,6 @@
 object FMain: TFMain
-  Left = 112
-  Top = 184
+  Left = 204
+  Top = 167
   Width = 1044
   Height = 414
   Caption = 'Device Simulator'

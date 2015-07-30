@@ -134,8 +134,7 @@ protected:
     int receivePos;
     int sendPos;
     int mRecvLen; // Current Receive Len
-    
-    bool hasDataRead;    
+
     bool isEnableWrite;
     
     bool bMessageOK; // The status of message received
@@ -143,7 +142,7 @@ protected:
     work_status_t FStatus; // Current work status
               // Wait, Connect, working, stop
 
-    //Send buffer and receive buffer 
+    //Send buffer and receive buffer
     unsigned char sendRawBuff[MAX_RAW_BUFFER_SIZE];
     unsigned char recvRawBuff[MAX_RAW_BUFFER_SIZE];
 

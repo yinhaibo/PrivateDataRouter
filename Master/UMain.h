@@ -133,11 +133,12 @@ __published:	// IDE-managed Components
     TMemo *txtResult;
     TButton *btnResult;
     TTimer *tmrWriteResult;
-    TRadioButton *rbRetransSameCh;
-    TRadioButton *RadioButton1;
     TEdit *txtRetransCount;
     TCheckBox *chkLimitRetrans;
     TLabel *lblRetransCount;
+    TGroupBox *GroupBox3;
+    TRadioButton *rbRetransSameCh;
+    TRadioButton *RadioButton1;
     void __fastcall Exit1Click(TObject *Sender);
     void __fastcall rbMasterClientModeClick(TObject *Sender);
     void __fastcall rbMasterServerModeClick(TObject *Sender);

@@ -381,8 +381,8 @@ void TFMain::TerminateAllThread()
         it != mWorkItems.end();
         ++it){
         WorkThread* thread = (*it).second.thread;
-        //thread->Stop();
-        //thread->Terminate();
+        thread->Stop();
+        thread->Terminate();
         delete thread;
         (*it).second.thread = NULL;
 
